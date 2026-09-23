@@ -1,0 +1,28 @@
+[package]
+name = "gedcomgraph"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "GEDCOM family tree layout engine"
+license = "MIT"
+
+[lib]
+name = "gedcomgraph"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gedcomgraph"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[lints.rust]
+unsafe_code = "warn"
+
+[lints.clippy]
+all = "warn"
