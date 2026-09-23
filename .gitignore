@@ -1,9 +1,9 @@
 .DS_Store
 .env
 *.log
+/target
+/dist
 cov-*.profraw
 coverage.profdata
-
-# Personal family tree data — not for public repo
 shirodkar.ged
 harry_potter.ged
