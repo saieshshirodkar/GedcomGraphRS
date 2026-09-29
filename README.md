@@ -42,7 +42,7 @@ No dependencies - standard library only. TrueType fonts load from the system at 
 
 ## Credits
 
-Original Java implementation by [michelesalvador](https://github.com/michelesalvador) - see [GedcomGraph](https://github.com/michelesalvador/GedcomGraph), [GedcomGraph-Canvas](https://github.com/michelesalvador/GedcomGraph-Canvas), and [FamilyGem](https://github.com/michelesalvador/FamilyGem). Ported through TypeScript, then 1:1 to Rust.
+Original Java implementation by [michelesalvador](https://github.com/michelesalvador) - see [GedcomGraph](https://github.com/michelesalvador/GedcomGraph), [GedcomGraph-Canvas](https://github.com/michelesalvador/GedcomGraph-Canvas), and [FamilyGem](https://github.com/michelesalvador/FamilyGem).
 
 ## License
 
