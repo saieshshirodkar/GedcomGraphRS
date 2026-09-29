@@ -1,6 +1,6 @@
 # GedcomGraphRS
 
-Parses GEDCOM 5.5.1 files and lays out family trees as positioned graphs. Pick any person as the fulcrum - the engine walks ancestors and descendants, handles multi-marriage and pedigree collapse, and produces a clean node graph. Renders SVG in the FamilyGem dark theme. Zero dependencies, standard library only.
+Give it a GEDCOM file and it draws your family tree as an SVG. Pick anyone to start from.
 
 <img src="output.svg" width="800">
 
