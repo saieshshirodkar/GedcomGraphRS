@@ -38,7 +38,7 @@ graph.place_nodes();
 let svg = render_svg(&graph, &fonts, &scale, ox, oy, w, h);
 ```
 
-No dependencies - standard library only. TrueType fonts load from the system at render time. `example.ged` is a 56-person tree across 7 generations; `demo.ged` is a smaller fixture. Personal GEDCOM files (`shirodkar.ged`, `harry_potter.ged`) stay out of the repo via `.gitignore`.
+No dependencies - standard library only. TrueType fonts load from the system at render time. `example.ged` is a 56-person tree across 7 generations; `demo.ged` is a smaller fixture.
 
 ## Credits
 
@@ -46,4 +46,4 @@ Original Java implementation by [michelesalvador](https://github.com/michelesalv
 
 ## License
 
-GNU - see the repo license.
+MIT - do whatever you want, see the repo license.
