@@ -2,7 +2,7 @@ mod common;
 
 use common::{Builder, all_finite, gedcom_of, person_generation, run, run_sized};
 use gedcomgraph::Graph;
-use gedcomgraph::model::{Fact, GPerson, GedcomData, Name};
+use gedcomgraph::model::{Fact, GPerson, GedcomData, Name, PersonId};
 
 #[test]
 fn step_family_new_spouse_appears() {
@@ -18,7 +18,12 @@ fn step_family_new_spouse_appears() {
     graph.max_siblings_nephews(1);
     run(&mut graph, child1);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&spouse2));
 }
 
@@ -31,7 +36,7 @@ fn missing_sex_no_crash() {
     run(&mut graph, a);
     assert!(all_finite(&graph));
     assert_eq!(
-        gedcomgraph::Gender::of_person(&graph.gedcom, a),
+        gedcomgraph::Gender::of_person(&graph.gedcom, a.0),
         gedcomgraph::Gender::None
     );
 }
@@ -62,7 +67,7 @@ fn stillborn_same_date_dead() {
         .anim
         .persons
         .iter()
-        .find(|q| q.person == p)
+        .find(|q| PersonId(q.person) == p)
         .expect("stillborn node");
     assert!(node.dead);
 }
@@ -79,7 +84,12 @@ fn family_with_only_children_no_parents() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&ful));
     assert!(ids.contains(&child));
 }
@@ -98,7 +108,12 @@ fn generation_continuity_across_multi_marriage() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, child1);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&child1));
 }
 
@@ -121,7 +136,12 @@ fn cousin_marriage_renders() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&spouse));
 }
 
@@ -165,8 +185,8 @@ fn five_generation_deep_positive_size() {
     graph.max_ancestors(5).max_descendants(1);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    assert!(graph.get_width() > 0.0);
-    assert!(graph.get_height() > 0.0);
+    assert!(graph.width() > 0.0);
+    assert!(graph.height() > 0.0);
 }
 
 #[test]
@@ -297,7 +317,12 @@ fn four_gen_with_aunt_uncle() {
     graph.max_ancestors(4).max_uncles_cousins(2);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&aunt));
     assert!(ids.contains(&cou));
 }

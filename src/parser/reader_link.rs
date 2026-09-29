@@ -1,12 +1,12 @@
-use crate::model::gedcom::{Fact, GFamily, GPerson, GedcomData, Name};
+use crate::model::gedcom::{Fact, FamilyId, GFamily, GPerson, GedcomData, Name, PersonId};
 use crate::parser::reader::{build_arena, child_date, child_place, strip_ats};
 use std::collections::HashMap;
 
 pub fn parse_gedcom(text: &str) -> GedcomData {
     let arena = build_arena(text);
     let mut ged = GedcomData::empty();
-    let mut person_ids: HashMap<String, u32> = HashMap::new();
-    let mut family_ids: HashMap<String, u32> = HashMap::new();
+    let mut person_ids: HashMap<String, PersonId> = HashMap::with_capacity(arena.roots.len());
+    let mut family_ids: HashMap<String, FamilyId> = HashMap::with_capacity(arena.roots.len());
     for r in &arena.roots {
         let n = &arena.nodes[*r];
         if n.tag == "HEAD" || n.tag == "TRLR" {
@@ -45,12 +45,12 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                 let kid = &arena.nodes[*c];
                 match kid.tag.as_str() {
                     "NAME" => {
-                        if let Some(p) = ged.persons.get_mut(pi as usize) {
+                        if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                             p.names.push(Name::of(&kid.value));
                         }
                     }
                     "SEX" => {
-                        if let Some(p) = ged.persons.get_mut(pi as usize) {
+                        if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                             p.facts
                                 .push(Fact::of("SEX", Some(kid.value.as_str()), Option::None));
                         }
@@ -58,12 +58,12 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     "FAMC" => {
                         let fid = strip_ats(&kid.value);
                         if let Some(fi) = family_ids.get(fid).copied() {
-                            if let Some(p) = ged.persons.get_mut(pi as usize) {
+                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                                 if !p.parent_fams.contains(&fi) {
                                     p.parent_fams.push(fi);
                                 }
                             }
-                            if let Some(f) = ged.families.get_mut(fi as usize) {
+                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
                                 if !f.children.contains(&pi) {
                                     f.children.push(pi);
                                 }
@@ -73,7 +73,7 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     "FAMS" => {
                         let fid = strip_ats(&kid.value);
                         if let Some(fi) = family_ids.get(fid).copied() {
-                            if let Some(p) = ged.persons.get_mut(pi as usize) {
+                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                                 if !p.spouse_fams.contains(&fi) {
                                     p.spouse_fams.push(fi);
                                 }
@@ -88,7 +88,7 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                         } else {
                             Some(kid.value.as_str())
                         };
-                        if let Some(p) = ged.persons.get_mut(pi as usize) {
+                        if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                             p.facts.push(Fact {
                                 tag: kid.tag.clone(),
                                 value: val.map(str::to_string),
@@ -110,12 +110,12 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     "HUSB" => {
                         let pid = strip_ats(&kid.value);
                         if let Some(pi) = person_ids.get(pid).copied() {
-                            if let Some(f) = ged.families.get_mut(fi as usize) {
+                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
                                 if !f.husbands.contains(&pi) {
                                     f.husbands.push(pi);
                                 }
                             }
-                            if let Some(p) = ged.persons.get_mut(pi as usize) {
+                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                                 if !p.spouse_fams.contains(&fi) {
                                     p.spouse_fams.push(fi);
                                 }
@@ -125,12 +125,12 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     "WIFE" => {
                         let pid = strip_ats(&kid.value);
                         if let Some(pi) = person_ids.get(pid).copied() {
-                            if let Some(f) = ged.families.get_mut(fi as usize) {
+                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
                                 if !f.wives.contains(&pi) {
                                     f.wives.push(pi);
                                 }
                             }
-                            if let Some(p) = ged.persons.get_mut(pi as usize) {
+                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                                 if !p.spouse_fams.contains(&fi) {
                                     p.spouse_fams.push(fi);
                                 }
@@ -140,12 +140,12 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     "CHIL" => {
                         let pid = strip_ats(&kid.value);
                         if let Some(pi) = person_ids.get(pid).copied() {
-                            if let Some(f) = ged.families.get_mut(fi as usize) {
+                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
                                 if !f.children.contains(&pi) {
                                     f.children.push(pi);
                                 }
                             }
-                            if let Some(p) = ged.persons.get_mut(pi as usize) {
+                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                                 if !p.parent_fams.contains(&fi) {
                                     p.parent_fams.push(fi);
                                 }
@@ -155,7 +155,7 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     _ => {
                         let date = child_date(&arena, *c);
                         let place = child_place(&arena, *c);
-                        if let Some(f) = ged.families.get_mut(fi as usize) {
+                        if let Some(f) = ged.families.get_mut(usize::from(fi)) {
                             f.facts.push(Fact {
                                 tag: kid.tag.clone(),
                                 value: Option::None,

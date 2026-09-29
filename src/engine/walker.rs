@@ -19,7 +19,7 @@ impl Graph {
             if self.which_family >= parent_families.len() {
                 self.which_family = parent_families.len() - 1;
             }
-            let parent_family = parent_families[self.which_family];
+            let parent_family = parent_families[self.which_family].0;
             let parent_mini = self.ancestor_generations == 0;
             let parent_kind = if parent_mini {
                 Card::Ancestry
@@ -82,17 +82,17 @@ impl Graph {
                 .map(|f| f.children.clone())
                 .unwrap_or_default();
             for sib in siblings {
-                if sib == fulcrum {
+                if sib.0 == fulcrum {
                     for node in fulcrum_genus.0.clone() {
                         self.anim.group_add_node(fg, node, Option::None);
                         let limit = self.descendant_generations + 1;
                         self.find_descendants(node, 0, limit, false);
                     }
                 } else if self.sibling_nephew_generations > 0
-                    && !fulcrum_genus.contains(&self.anim, &self.gedcom, sib)
+                    && !fulcrum_genus.contains(&self.anim, sib.0)
                 {
                     let genus = self.find_person_genus(
-                        sib,
+                        sib.0,
                         Some(NodeId::Family(parent_node)),
                         0,
                         Card::Regular,

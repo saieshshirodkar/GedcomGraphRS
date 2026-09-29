@@ -1,3 +1,4 @@
+use gedcomgraph::model::{FamilyId, PersonId};
 use gedcomgraph::parse_gedcom;
 
 const SIMPLE: &str = "0 HEAD\n1 GEDC\n2 VERS 5.5.1\n0 @I1@ INDI\n1 NAME John /Smith/\n1 SEX M\n1 BIRT\n2 DATE 1870\n1 FAMS @F1@\n0 @I2@ INDI\n1 NAME Mary /Doe/\n1 SEX F\n1 FAMS @F1@\n0 @I3@ INDI\n1 NAME Kid /Smith/\n1 SEX M\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 CHIL @I3@\n1 MARR\n2 DATE 1895\n0 TRLR\n";
@@ -12,8 +13,8 @@ fn parses_people_and_family() {
 #[test]
 fn strips_at_signs() {
     let g = parse_gedcom(SIMPLE);
-    assert_eq!(g.find_person("I1"), Some(0));
-    assert_eq!(g.find_family("F1"), Some(0));
+    assert_eq!(g.find_person("I1"), Some(PersonId(0)));
+    assert_eq!(g.find_family("F1"), Some(FamilyId(0)));
     assert_eq!(g.find_person("ZZZ"), Option::None);
 }
 
@@ -21,10 +22,10 @@ fn strips_at_signs() {
 fn links_relations() {
     let g = parse_gedcom(SIMPLE);
     let f = g.family(0).expect("family");
-    assert_eq!(f.husbands, vec![0]);
-    assert_eq!(f.wives, vec![1]);
-    assert_eq!(f.children, vec![2]);
-    assert_eq!(g.person(2).expect("kid").parent_fams, vec![0]);
+    assert_eq!(f.husbands, vec![PersonId(0)]);
+    assert_eq!(f.wives, vec![PersonId(1)]);
+    assert_eq!(f.children, vec![PersonId(2)]);
+    assert_eq!(g.person(2).expect("kid").parent_fams, vec![FamilyId(0)]);
 }
 
 #[test]
@@ -106,6 +107,6 @@ fn repeated_links_deduplicated() {
     let g = parse_gedcom(txt);
     assert_eq!(g.person(0).expect("a").spouse_fams.len(), 1);
     assert_eq!(g.family(0).expect("fam").husbands.len(), 1);
-    assert_eq!(g.find_family("F1"), Some(0));
+    assert_eq!(g.find_family("F1"), Some(FamilyId(0)));
     assert_eq!(g.find_family("ZZZ"), Option::None);
 }

@@ -17,7 +17,7 @@ pub struct PersonNodeData {
 
 impl PersonNodeData {
     pub fn single(person: u32, kind: Card, generation: i32) -> PersonNodeData {
-        PersonNodeData {
+        let mut node = PersonNodeData {
             base: NodeBase::of_generation(generation),
             person,
             origin: Option::None,
@@ -28,7 +28,9 @@ impl PersonNodeData {
             amount: 0,
             duplicate: false,
             half_sibling: false,
-        }
+        };
+        node.base.mini = node.is_mini_card();
+        node
     }
 
     pub fn is_fulcrum(&self) -> bool {

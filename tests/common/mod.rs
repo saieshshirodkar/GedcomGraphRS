@@ -1,4 +1,4 @@
-use gedcomgraph::model::{Fact, GFamily, GPerson, Name};
+use gedcomgraph::model::{Fact, FamilyId, GFamily, GPerson, Name, PersonId};
 use gedcomgraph::{GedcomData, Graph};
 
 pub struct Builder {
@@ -12,7 +12,7 @@ impl Builder {
         }
     }
 
-    pub fn person(&mut self, id: &str, name: &str, sex: Option<&str>, dead: bool) -> u32 {
+    pub fn person(&mut self, id: &str, name: &str, sex: Option<&str>, dead: bool) -> PersonId {
         let mut facts: Vec<Fact> = Vec::new();
         if let Some(s) = sex {
             facts.push(Fact::of("SEX", Some(s), Option::None));
@@ -32,11 +32,11 @@ impl Builder {
     pub fn family(
         &mut self,
         id: &str,
-        husb: Option<u32>,
-        wife: Option<u32>,
-        kids: &[u32],
+        husb: Option<PersonId>,
+        wife: Option<PersonId>,
+        kids: &[PersonId],
         marr: Option<&str>,
-    ) -> u32 {
+    ) -> FamilyId {
         let mut facts: Vec<Fact> = Vec::new();
         if let Some(d) = marr {
             facts.push(Fact::dated("MARR", Some(d)));
@@ -48,8 +48,8 @@ impl Builder {
             children: Vec::new(),
             facts,
         });
-        let mut hs: Vec<u32> = Vec::new();
-        let mut ws: Vec<u32> = Vec::new();
+        let mut hs: Vec<PersonId> = Vec::new();
+        let mut ws: Vec<PersonId> = Vec::new();
         if let Some(h) = husb {
             hs.push(h);
         }
@@ -67,14 +67,14 @@ impl Builder {
     }
 }
 
-pub fn run(graph: &mut Graph, fulcrum: u32) {
-    graph.start_from(fulcrum);
+pub fn run(graph: &mut Graph, fulcrum: PersonId) {
+    graph.start_from(fulcrum.0);
     graph.init_nodes();
     graph.place_nodes();
 }
 
-pub fn run_sized(graph: &mut Graph, fulcrum: u32, w: f32, h: f32) {
-    graph.start_from(fulcrum);
+pub fn run_sized(graph: &mut Graph, fulcrum: PersonId, w: f32, h: f32) {
+    graph.start_from(fulcrum.0);
     graph.set_all_person_sizes(w, h);
     graph.init_nodes();
     graph.place_nodes();
@@ -106,11 +106,11 @@ pub fn person_generation(graph: &Graph, pid: u32) -> i32 {
         .unwrap_or(999)
 }
 
-pub fn gedcom_of(graph: &Graph, pid: u32) -> u32 {
+pub fn gedcom_of(graph: &Graph, pid: u32) -> PersonId {
     graph
         .anim
         .persons
         .get(pid as usize)
-        .map(|p| p.person)
-        .unwrap_or(u32::MAX)
+        .map(|p| PersonId(p.person))
+        .unwrap_or(PersonId(u32::MAX))
 }

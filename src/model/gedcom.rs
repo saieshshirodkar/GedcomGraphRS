@@ -14,21 +14,69 @@ pub struct Fact {
     pub place: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct PersonId(pub u32);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct FamilyId(pub u32);
+
+impl From<u32> for PersonId {
+    fn from(v: u32) -> PersonId {
+        PersonId(v)
+    }
+}
+
+impl From<PersonId> for u32 {
+    fn from(v: PersonId) -> u32 {
+        v.0
+    }
+}
+
+impl From<PersonId> for usize {
+    fn from(v: PersonId) -> usize {
+        v.0 as usize
+    }
+}
+
+impl std::fmt::Display for PersonId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<u32> for FamilyId {
+    fn from(v: u32) -> FamilyId {
+        FamilyId(v)
+    }
+}
+
+impl From<FamilyId> for u32 {
+    fn from(v: FamilyId) -> u32 {
+        v.0
+    }
+}
+
+impl From<FamilyId> for usize {
+    fn from(v: FamilyId) -> usize {
+        v.0 as usize
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct GPerson {
     pub id: String,
     pub names: Vec<Name>,
     pub facts: Vec<Fact>,
-    pub parent_fams: Vec<u32>,
-    pub spouse_fams: Vec<u32>,
+    pub parent_fams: Vec<FamilyId>,
+    pub spouse_fams: Vec<FamilyId>,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct GFamily {
     pub id: String,
-    pub husbands: Vec<u32>,
-    pub wives: Vec<u32>,
-    pub children: Vec<u32>,
+    pub husbands: Vec<PersonId>,
+    pub wives: Vec<PersonId>,
+    pub children: Vec<PersonId>,
     pub facts: Vec<Fact>,
 }
 

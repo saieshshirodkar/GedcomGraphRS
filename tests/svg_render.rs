@@ -25,14 +25,14 @@ fn svg_of(fulcrum_name: &str) -> Option<String> {
     let ful = ged.find_person(fulcrum_name).expect("fulcrum");
     let mut graph = Graph::with_gedcom(ged);
     graph.set_layout_direction(true);
-    graph.start_from(ful);
+    graph.start_from(ful.0);
     measure_all(&mut graph, &fonts, &sc);
     graph.init_nodes();
     graph.set_max_bitmap_size(1000.0);
     graph.place_nodes();
     assert!(all_finite(&graph));
-    let w = (graph.get_width() * sc.s).round() as i32 + sc.pad_px() * 2;
-    let h = (graph.get_height() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let w = (graph.width() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let h = (graph.height() * sc.s).round() as i32 + sc.pad_px() * 2;
     Some(render_svg(
         &graph,
         &fonts,
@@ -103,7 +103,7 @@ fn ancestor_multimarriage_makes_back_lines() {
     let ged = b.finish();
     let mut graph = Graph::with_gedcom(ged);
     graph.set_layout_direction(true);
-    graph.start_from(ful);
+    graph.start_from(ful.0);
     measure_all(&mut graph, &fonts, &sc);
     graph.init_nodes();
     graph.set_max_bitmap_size(1000.0);
@@ -113,8 +113,8 @@ fn ancestor_multimarriage_makes_back_lines() {
     for l in &graph.anim.back_lines {
         assert!(l.x1.is_finite() && l.x2.is_finite() && l.y1.is_finite() && l.y2.is_finite());
     }
-    let w = (graph.get_width() * sc.s).round() as i32 + sc.pad_px() * 2;
-    let h = (graph.get_height() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let w = (graph.width() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let h = (graph.height() * sc.s).round() as i32 + sc.pad_px() * 2;
     let svg = render_svg(
         &graph,
         &fonts,
@@ -149,13 +149,13 @@ fn svg_mini_cards_render() {
     let mut graph = Graph::with_gedcom(ged);
     graph.max_descendants(0);
     graph.set_layout_direction(true);
-    graph.start_from(ful);
+    graph.start_from(ful.0);
     measure_all(&mut graph, &fonts, &sc);
     graph.init_nodes();
     graph.place_nodes();
     assert!(graph.anim.persons.iter().any(|p| p.base.mini));
-    let w = (graph.get_width() * sc.s).round() as i32 + sc.pad_px() * 2;
-    let h = (graph.get_height() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let w = (graph.width() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let h = (graph.height() * sc.s).round() as i32 + sc.pad_px() * 2;
     let svg = render_svg(
         &graph,
         &fonts,

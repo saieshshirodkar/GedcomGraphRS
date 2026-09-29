@@ -2,8 +2,17 @@ mod common;
 
 use common::{Builder, all_finite, gedcom_of, person_generation, run, run_sized};
 use gedcomgraph::Graph;
+use gedcomgraph::model::PersonId;
 
-fn generations() -> (Graph, u32, u32, u32, u32, u32, u32) {
+fn generations() -> (
+    Graph,
+    PersonId,
+    PersonId,
+    PersonId,
+    PersonId,
+    PersonId,
+    PersonId,
+) {
     let mut b = Builder::create();
     let gp = b.person("I1", "GP /A/", Some("M"), true);
     let gm = b.person("I2", "GM /A/", Some("F"), true);
@@ -22,12 +31,12 @@ fn generations() -> (Graph, u32, u32, u32, u32, u32, u32) {
 fn y_ordered_by_generation() {
     let (mut graph, gp, _, par, ful, chd, _) = generations();
     run(&mut graph, ful);
-    let y_of = |id: u32| -> f32 {
+    let y_of = |id: PersonId| -> f32 {
         graph
             .anim
             .persons
             .iter()
-            .find(|p| p.person == id)
+            .find(|p| PersonId(p.person) == id)
             .map(|p| p.base.y)
             .unwrap_or(f32::NAN)
     };
@@ -95,7 +104,7 @@ fn fulcrum_family_shares_y() {
             graph
                 .gedcom
                 .find_person(&graph.person_gedcom_id(f))
-                .unwrap_or(u32::MAX)
+                .unwrap_or(PersonId(u32::MAX))
         );
     }
 }
@@ -104,7 +113,7 @@ fn fulcrum_family_shares_y() {
 fn width_covers_all_nodes() {
     let (mut graph, _, _, _, ful, _, _) = generations();
     run_sized(&mut graph, ful, 60.0, 40.0);
-    let w = graph.get_width();
+    let w = graph.width();
     for n in graph.anim.nodes.clone() {
         let x = graph.node_x(n);
         assert!(x >= -0.01 && x <= w + 0.01);
@@ -123,8 +132,8 @@ fn mini_cards_when_numbers_hidden() {
 #[test]
 fn deep_tree_stays_finite() {
     let mut b = Builder::create();
-    let mut prev: Option<u32> = Option::None;
-    let mut ids: Vec<u32> = Vec::new();
+    let mut prev: Option<PersonId> = Option::None;
+    let mut ids: Vec<PersonId> = Vec::new();
     for i in 0..6 {
         let p = b.person(&format!("I{i}"), "P /D/", Some("M"), false);
         ids.push(p);
@@ -152,7 +161,7 @@ fn wide_sibling_row() {
     let mut b = Builder::create();
     let dad = b.person("I1", "Dad /E/", Some("M"), false);
     let mom = b.person("I2", "Mom /E/", Some("F"), false);
-    let mut kids: Vec<u32> = Vec::new();
+    let mut kids: Vec<PersonId> = Vec::new();
     for i in 0..6 {
         kids.push(b.person(&format!("K{i}"), "K /E/", Some("M"), false));
     }
@@ -182,7 +191,12 @@ fn uncles_appear_with_cousins() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&unc));
     assert!(ids.contains(&cou));
 }

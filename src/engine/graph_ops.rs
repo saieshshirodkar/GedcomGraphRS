@@ -1,10 +1,11 @@
 use crate::engine::graph::Graph;
 use crate::lines::duplicate::DupLine;
+use crate::model::gedcom::PersonId;
 use crate::model::kin::spouses_of;
 
 impl Graph {
-    pub fn get_spouses(&self, family: u32, excluded: Option<u32>) -> Vec<u32> {
-        spouses_of(&self.gedcom, family, excluded)
+    pub fn spouses(&self, family: u32, excluded: Option<u32>) -> Vec<PersonId> {
+        spouses_of(&self.gedcom, family, excluded.map(PersonId))
     }
 
     pub fn are_siblings(&self, first: Option<u32>, second: Option<u32>) -> bool {

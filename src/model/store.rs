@@ -1,4 +1,4 @@
-use super::gedcom::{GFamily, GPerson, GedcomData};
+use super::gedcom::{FamilyId, GFamily, GPerson, GedcomData, PersonId};
 
 impl GedcomData {
     pub fn empty() -> GedcomData {
@@ -6,14 +6,16 @@ impl GedcomData {
     }
 
     pub fn reindex(&mut self) {
-        let mut po: Vec<u32> = (0..self.persons.len() as u32).collect();
+        let np = u32::try_from(self.persons.len()).unwrap_or(u32::MAX);
+        let mut po: Vec<u32> = (0..np).collect();
         po.sort_by(|a, b| {
             self.persons[*a as usize]
                 .id
                 .cmp(&self.persons[*b as usize].id)
         });
         self.person_order = po;
-        let mut fo: Vec<u32> = (0..self.families.len() as u32).collect();
+        let nf = u32::try_from(self.families.len()).unwrap_or(u32::MAX);
+        let mut fo: Vec<u32> = (0..nf).collect();
         fo.sort_by(|a, b| {
             self.families[*a as usize]
                 .id
@@ -22,7 +24,7 @@ impl GedcomData {
         self.family_order = fo;
     }
 
-    pub fn find_person(&self, id: &str) -> Option<u32> {
+    pub fn find_person(&self, id: &str) -> Option<PersonId> {
         let mut lo = 0usize;
         let mut hi = self.person_order.len();
         while lo < hi {
@@ -34,7 +36,7 @@ impl GedcomData {
                 .map(|p| p.id.as_str())
                 .unwrap_or_default();
             if cur == id {
-                return Some(idx as u32);
+                return u32::try_from(idx).ok().map(PersonId);
             } else if cur < id {
                 lo = mid + 1;
             } else {
@@ -44,7 +46,7 @@ impl GedcomData {
         Option::None
     }
 
-    pub fn find_family(&self, id: &str) -> Option<u32> {
+    pub fn find_family(&self, id: &str) -> Option<FamilyId> {
         let mut lo = 0usize;
         let mut hi = self.family_order.len();
         while lo < hi {
@@ -56,7 +58,7 @@ impl GedcomData {
                 .map(|f| f.id.as_str())
                 .unwrap_or_default();
             if cur == id {
-                return Some(idx as u32);
+                return u32::try_from(idx).ok().map(FamilyId);
             } else if cur < id {
                 lo = mid + 1;
             } else {
@@ -82,38 +84,38 @@ impl GedcomData {
         self.families.len()
     }
 
-    pub fn push_person(&mut self, person: GPerson) -> u32 {
-        let idx = self.persons.len() as u32;
+    pub fn push_person(&mut self, person: GPerson) -> PersonId {
+        let idx = PersonId(u32::try_from(self.persons.len()).unwrap_or(u32::MAX));
         self.persons.push(person);
         idx
     }
 
-    pub fn push_family(&mut self, family: GFamily) -> u32 {
-        let idx = self.families.len() as u32;
+    pub fn push_family(&mut self, family: GFamily) -> FamilyId {
+        let idx = FamilyId(u32::try_from(self.families.len()).unwrap_or(u32::MAX));
         self.families.push(family);
         idx
     }
 
-    pub fn link_spouses(&mut self, family: u32, husbands: &[u32], wives: &[u32]) {
+    pub fn link_spouses(&mut self, family: FamilyId, husbands: &[PersonId], wives: &[PersonId]) {
         for h in husbands {
-            if let Some(p) = self.persons.get_mut(*h as usize) {
+            if let Some(p) = self.persons.get_mut(usize::from(*h)) {
                 if !p.spouse_fams.contains(&family) {
                     p.spouse_fams.push(family);
                 }
             }
-            if let Some(f) = self.families.get_mut(family as usize) {
+            if let Some(f) = self.families.get_mut(usize::from(family)) {
                 if !f.husbands.contains(h) {
                     f.husbands.push(*h);
                 }
             }
         }
         for w in wives {
-            if let Some(p) = self.persons.get_mut(*w as usize) {
+            if let Some(p) = self.persons.get_mut(usize::from(*w)) {
                 if !p.spouse_fams.contains(&family) {
                     p.spouse_fams.push(family);
                 }
             }
-            if let Some(f) = self.families.get_mut(family as usize) {
+            if let Some(f) = self.families.get_mut(usize::from(family)) {
                 if !f.wives.contains(w) {
                     f.wives.push(*w);
                 }
@@ -121,14 +123,14 @@ impl GedcomData {
         }
     }
 
-    pub fn link_children(&mut self, family: u32, children: &[u32]) {
+    pub fn link_children(&mut self, family: FamilyId, children: &[PersonId]) {
         for c in children {
-            if let Some(p) = self.persons.get_mut(*c as usize) {
+            if let Some(p) = self.persons.get_mut(usize::from(*c)) {
                 if !p.parent_fams.contains(&family) {
                     p.parent_fams.push(family);
                 }
             }
-            if let Some(f) = self.families.get_mut(family as usize) {
+            if let Some(f) = self.families.get_mut(usize::from(family)) {
                 if !f.children.contains(c) {
                     f.children.push(*c);
                 }
@@ -184,9 +186,9 @@ mod tests {
     fn reindex_sorts_lookup() {
         let mut g = two();
         g.reindex();
-        assert_eq!(g.find_person("I1"), Some(1));
-        assert_eq!(g.find_person("I2"), Some(0));
-        assert_eq!(g.find_family("F1"), Some(0));
+        assert_eq!(g.find_person("I1"), Some(PersonId(1)));
+        assert_eq!(g.find_person("I2"), Some(PersonId(0)));
+        assert_eq!(g.find_family("F1"), Some(FamilyId(0)));
         assert_eq!(g.person_count(), 2);
         assert_eq!(g.family_count(), 1);
     }
@@ -194,15 +196,15 @@ mod tests {
     #[test]
     fn links_deduplicate() {
         let mut g = two();
-        g.link_spouses(0, &[0], &[1]);
-        g.link_spouses(0, &[0], &[1]);
-        g.link_children(0, &[1]);
-        g.link_children(0, &[1]);
-        assert_eq!(g.families[0].husbands, vec![0]);
-        assert_eq!(g.families[0].wives, vec![1]);
-        assert_eq!(g.families[0].children, vec![1]);
-        assert_eq!(g.persons[0].spouse_fams, vec![0]);
-        assert_eq!(g.persons[1].parent_fams, vec![0]);
-        assert_eq!(g.find_person("I1"), Some(1));
+        g.link_spouses(FamilyId(0), &[PersonId(0)], &[PersonId(1)]);
+        g.link_spouses(FamilyId(0), &[PersonId(0)], &[PersonId(1)]);
+        g.link_children(FamilyId(0), &[PersonId(1)]);
+        g.link_children(FamilyId(0), &[PersonId(1)]);
+        assert_eq!(g.families[0].husbands, vec![PersonId(0)]);
+        assert_eq!(g.families[0].wives, vec![PersonId(1)]);
+        assert_eq!(g.families[0].children, vec![PersonId(1)]);
+        assert_eq!(g.persons[0].spouse_fams, vec![FamilyId(0)]);
+        assert_eq!(g.persons[1].parent_fams, vec![FamilyId(0)]);
+        assert_eq!(g.find_person("I1"), Some(PersonId(1)));
     }
 }

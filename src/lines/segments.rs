@@ -64,6 +64,7 @@ impl LineSeg {
     }
 
     pub fn compare(&self, other: &LineSeg) -> std::cmp::Ordering {
+        debug_assert!(self.left().is_finite() && other.left().is_finite());
         self.left()
             .partial_cmp(&other.left())
             .unwrap_or(std::cmp::Ordering::Equal)

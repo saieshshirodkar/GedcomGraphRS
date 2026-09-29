@@ -62,7 +62,7 @@ impl Match {
         Match::Middle
     }
 
-    pub fn get_for_ancestors(tot_families: usize, index: usize, side: Side) -> Match {
+    pub fn for_ancestors(tot_families: usize, index: usize, side: Side) -> Match {
         if (side == Side::Left && tot_families > 0 && index + 1 == tot_families)
             || (side == Side::Right && index == 0)
         {
@@ -122,28 +122,28 @@ mod tests {
 
     #[test]
     fn ancestors_right_first_is_near() {
-        assert_eq!(Match::get_for_ancestors(3, 0, Side::Right), Match::Near);
+        assert_eq!(Match::for_ancestors(3, 0, Side::Right), Match::Near);
     }
 
     #[test]
     fn ancestors_right_last_is_far() {
-        assert_eq!(Match::get_for_ancestors(3, 2, Side::Right), Match::Far);
+        assert_eq!(Match::for_ancestors(3, 2, Side::Right), Match::Far);
     }
 
     #[test]
     fn ancestors_left_last_is_near() {
-        assert_eq!(Match::get_for_ancestors(3, 2, Side::Left), Match::Near);
+        assert_eq!(Match::for_ancestors(3, 2, Side::Left), Match::Near);
     }
 
     #[test]
     fn ancestors_left_first_is_far() {
-        assert_eq!(Match::get_for_ancestors(3, 0, Side::Left), Match::Far);
+        assert_eq!(Match::for_ancestors(3, 0, Side::Left), Match::Far);
     }
 
     #[test]
     fn ancestors_middle_is_middle() {
-        assert_eq!(Match::get_for_ancestors(3, 1, Side::Left), Match::Middle);
-        assert_eq!(Match::get_for_ancestors(3, 1, Side::Right), Match::Middle);
+        assert_eq!(Match::for_ancestors(3, 1, Side::Left), Match::Middle);
+        assert_eq!(Match::for_ancestors(3, 1, Side::Right), Match::Middle);
     }
 
     #[test]
@@ -158,8 +158,8 @@ mod tests {
     fn zero_family_edges() {
         assert_eq!(Match::get(0, 0, Side::Right, true), Match::Main);
         assert_eq!(Match::get(0, 0, Side::Left, true), Match::Far);
-        assert_eq!(Match::get_for_ancestors(0, 0, Side::Right), Match::Near);
-        assert_eq!(Match::get_for_ancestors(0, 0, Side::Left), Match::Far);
+        assert_eq!(Match::for_ancestors(0, 0, Side::Right), Match::Near);
+        assert_eq!(Match::for_ancestors(0, 0, Side::Left), Match::Far);
         assert_eq!(Match::get(1, 0, Side::Right, true), Match::Main);
         assert_eq!(Match::get(1, 0, Side::Left, true), Match::Main);
     }

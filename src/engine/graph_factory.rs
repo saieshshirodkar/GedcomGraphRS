@@ -1,6 +1,7 @@
 use crate::config::{Card, Match, Side};
 use crate::core::node_base::NodeId;
 use crate::engine::graph::Graph;
+use crate::model::gedcom::FamilyId;
 use crate::model::helpers::person_is_dead;
 use crate::model::kin::{count_ancestors, count_descendants, family_marriage_date, spouses_of};
 use crate::nodes::family::{BondData, FamilyNodeData};
@@ -15,10 +16,8 @@ impl Graph {
             }
         } else if kind == Card::Ancestry {
             node.amount = count_ancestors(&self.gedcom, person);
-            node.base.mini = true;
         } else if kind == Card::Progeny {
             node.amount = count_descendants(&self.gedcom, person);
-            node.base.mini = true;
         }
         self.anim.alloc_person(node)
     }
@@ -61,7 +60,7 @@ impl Graph {
                     f.base.stamp = stamp;
                 }
                 for s in spouses {
-                    if s == person
+                    if s.0 == person
                         && !self
                             .anim
                             .families
@@ -71,8 +70,8 @@ impl Graph {
                     {
                         self.family_add_partner(fid, pid);
                     } else {
-                        let q = self.make_person_node(s, Card::Regular, generation);
-                        let same_parent = parent.and_then(|par| self.anim_parents_share(par, s));
+                        let q = self.make_person_node(s.0, Card::Regular, generation);
+                        let same_parent = parent.and_then(|par| self.anim_parents_share(par, s.0));
                         if same_parent.unwrap_or(false) {
                             if let Some(p) = self.anim.persons.get_mut(q as usize) {
                                 p.origin = parent;
@@ -113,7 +112,7 @@ impl Graph {
             .person(spouse)
             .map(|p| p.parent_fams.clone())
             .unwrap_or_default();
-        pfam.map(|f| sfams.contains(&f))
+        pfam.map(|f| sfams.contains(&FamilyId(f)))
     }
 
     pub(crate) fn family_add_partner(&mut self, fid: u32, pid: u32) {

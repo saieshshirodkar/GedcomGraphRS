@@ -1,6 +1,7 @@
 use crate::config::{Card, Match, Side};
 use crate::core::node_base::NodeId;
 use crate::engine::graph::Graph;
+use crate::model::gedcom::PersonId;
 use crate::model::kin::spouses_of;
 use crate::nodes::family::FamilyNodeData;
 
@@ -30,7 +31,7 @@ impl Graph {
             }
             let spouses = spouses_of(&self.gedcom, spouse_family, Option::None);
             for s in spouses {
-                let q = self.make_person_node(s, kind, generation);
+                let q = self.make_person_node(s.0, kind, generation);
                 self.check_for_duplicate(q, Some(spouse_family));
                 self.family_add_partner(fid, q);
             }
@@ -60,10 +61,10 @@ impl Graph {
             f.base.stamp = stamp;
         }
         if self.with_spouses {
-            let partners = spouses_of(&self.gedcom, spouse_family, Some(excluded));
+            let partners = spouses_of(&self.gedcom, spouse_family, Some(PersonId(excluded)));
             for s in partners {
-                let q = self.make_person_node(s, Card::Regular, generation);
-                let same_parent = parent.and_then(|par| self.anim_parents_share(par, s));
+                let q = self.make_person_node(s.0, Card::Regular, generation);
+                let same_parent = parent.and_then(|par| self.anim_parents_share(par, s.0));
                 if same_parent.unwrap_or(false) {
                     if let Some(p) = self.anim.persons.get_mut(q as usize) {
                         p.origin = parent;

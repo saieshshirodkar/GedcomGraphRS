@@ -2,9 +2,10 @@ mod common;
 
 use common::{Builder, all_finite, gedcom_of, person_generation, run, run_sized};
 use gedcomgraph::lines::LineKind;
+use gedcomgraph::model::PersonId;
 use gedcomgraph::{Card, Graph, Match};
 
-fn uncles() -> (Graph, u32, u32, u32) {
+fn uncles() -> (Graph, PersonId, PersonId, PersonId) {
     let mut b = Builder::create();
     let gp = b.person("I1", "GP /A/", Some("M"), true);
     let gm = b.person("I2", "GM /A/", Some("F"), true);
@@ -21,7 +22,7 @@ fn uncles() -> (Graph, u32, u32, u32) {
     (Graph::with_gedcom(ged), ful, unc, cou)
 }
 
-fn spouses3() -> (Graph, u32) {
+fn spouses3() -> (Graph, PersonId) {
     let mut b = Builder::create();
     let man = b.person("I1", "Man /B/", Some("M"), false);
     let w1 = b.person("I2", "W1 /B/", Some("F"), false);
@@ -34,7 +35,7 @@ fn spouses3() -> (Graph, u32) {
     (Graph::with_gedcom(ged), man)
 }
 
-fn three_gen() -> (Graph, u32) {
+fn three_gen() -> (Graph, PersonId) {
     let mut b = Builder::create();
     let par = b.person("I1", "Par /C/", Some("M"), false);
     let spo = b.person("I2", "Spo /C/", Some("F"), false);
@@ -47,8 +48,13 @@ fn three_gen() -> (Graph, u32) {
     (Graph::with_gedcom(ged), ful)
 }
 
-fn ids(graph: &Graph) -> Vec<u32> {
-    graph.anim.persons.iter().map(|p| p.person).collect()
+fn ids(graph: &Graph) -> Vec<PersonId> {
+    graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect()
 }
 
 #[test]
@@ -176,7 +182,7 @@ fn init_only_solo() {
     let mut b = Builder::create();
     let a = b.person("I1", "Solo /H/", Some("M"), false);
     let mut graph = Graph::with_gedcom(b.finish());
-    graph.start_from(a);
+    graph.start_from(a.0);
     graph.init_nodes();
     assert!(graph.anim.node_count() >= 1);
     assert!(graph.anim.person_count() >= 1);
@@ -191,7 +197,7 @@ fn bitmap_zero_biggest_zero() {
     let mut graph = Graph::with_gedcom(b.finish());
     assert!(graph.need_max_bitmap_size());
     run(&mut graph, a);
-    assert_eq!(graph.get_biggest_path_size(), 0.0);
+    assert_eq!(graph.biggest_path_size(), 0.0);
 }
 
 #[test]
@@ -201,13 +207,13 @@ fn mirror_preserves_layout() {
     let (mut g2, ful2) = three_gen();
     g2.set_layout_direction(true);
     run_sized(&mut g2, ful2, 60.0, 40.0);
-    assert_eq!(g1.get_width(), g2.get_width());
-    assert_eq!(g1.get_height(), g2.get_height());
+    assert_eq!(g1.width(), g2.width());
+    assert_eq!(g1.height(), g2.height());
     assert_eq!(g1.anim.person_count(), g2.anim.person_count());
     for i in 0..g1.anim.person_count() {
         let a = &g1.anim.persons[i];
         let b = &g2.anim.persons[i];
-        assert!((a.base.x + b.base.x + a.base.w - g1.get_width()).abs() < 0.05);
+        assert!((a.base.x + b.base.x + a.base.w - g1.width()).abs() < 0.05);
         assert_eq!(a.base.y, b.base.y);
     }
 }

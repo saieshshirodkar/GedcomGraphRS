@@ -1,6 +1,5 @@
 use crate::core::node_base::NodeId;
 use crate::engine::animator::Animator;
-use crate::model::gedcom::GedcomData;
 
 #[derive(Debug, Clone, Default)]
 pub struct GroupRow {
@@ -56,11 +55,14 @@ impl Genus {
         self.0.is_empty()
     }
 
-    pub fn contains(&self, anim: &Animator, ged: &GedcomData, person: u32) -> bool {
-        let target = ged.person(person).map(|p| p.id.clone()).unwrap_or_default();
+    pub fn contains(&self, anim: &Animator, person: u32) -> bool {
         for nid in &self.0 {
             for p in anim.node_persons(*nid) {
-                if anim.gedcom_person_id(ged, p) == target {
+                if anim
+                    .persons
+                    .get(p as usize)
+                    .is_some_and(|q| q.person == person)
+                {
                     return true;
                 }
             }
@@ -74,29 +76,18 @@ mod tests {
     use super::*;
     use crate::config::Card;
     use crate::core::node_base::NodeId;
-    use crate::model::gedcom::{GPerson, Name};
     use crate::nodes::person::PersonNodeData;
 
     #[test]
     fn genus_contains_by_gedcom_id() {
-        let mut ged = GedcomData::empty();
-        for id in ["I1", "I2"] {
-            ged.push_person(GPerson {
-                id: id.to_string(),
-                names: vec![Name::of("N")],
-                facts: Vec::new(),
-                parent_fams: Vec::new(),
-                spouse_fams: Vec::new(),
-            });
-        }
         let mut anim = Animator::fresh();
         anim.alloc_person(PersonNodeData::single(0, Card::Regular, 0));
         let mut g = Genus::empty();
         assert!(g.is_empty());
         g.push(NodeId::Person(0));
         assert_eq!(g.len(), 1);
-        assert!(g.contains(&anim, &ged, 0));
-        assert!(!g.contains(&anim, &ged, 1));
-        assert!(!g.contains(&anim, &ged, 99));
+        assert!(g.contains(&anim, 0));
+        assert!(!g.contains(&anim, 1));
+        assert!(!g.contains(&anim, 99));
     }
 }

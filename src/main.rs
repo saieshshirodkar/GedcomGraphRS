@@ -4,43 +4,58 @@ use gedcomgraph::render::svg::render_svg;
 use gedcomgraph::render::theme::Scale;
 use gedcomgraph::{GedcomData, Graph, parse_gedcom};
 use std::fs::read_to_string;
-use std::process::exit;
+use std::process::ExitCode;
 
-fn load(path: &str) -> GedcomData {
-    match read_to_string(path) {
-        Ok(text) => parse_gedcom(&text),
-        Err(e) => {
-            eprintln!("cannot read {path}: {e}");
-            exit(1);
+#[derive(Debug)]
+enum AppError {
+    Read(String),
+    Empty(String),
+    Fonts,
+    Write(String),
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::Read(path) => write!(f, "cannot read {path}"),
+            AppError::Empty(path) => write!(f, "no people in {path}"),
+            AppError::Fonts => write!(f, "no system fonts found"),
+            AppError::Write(path) => write!(f, "cannot write {path}"),
         }
+    }
+}
+
+impl std::error::Error for AppError {}
+
+fn load(path: &str) -> Result<GedcomData, AppError> {
+    match read_to_string(path) {
+        Ok(text) => Ok(parse_gedcom(&text)),
+        Err(_) => Err(AppError::Read(path.to_string())),
     }
 }
 
 fn pick_fulcrum(ged: &GedcomData, wanted: Option<&str>) -> u32 {
     if let Some(id) = wanted {
         if let Some(i) = ged.find_person(id) {
-            return i;
+            return i.0;
         }
         eprintln!("person {id} not found, using default");
     }
     let mut fallback = Option::None;
     for (i, p) in ged.persons.iter().enumerate() {
+        let idx = u32::try_from(i).unwrap_or(u32::MAX);
         if fallback.is_none() {
-            fallback = Some(i as u32);
+            fallback = Some(idx);
         }
         if !p.parent_fams.is_empty() && !p.spouse_fams.is_empty() {
-            return i as u32;
+            return idx;
         }
     }
     fallback.unwrap_or(0)
 }
 
 fn print_tree(graph: &Graph, ged: &GedcomData) {
-    println!(
-        "width {:.1} height {:.1}",
-        graph.get_width(),
-        graph.get_height()
-    );
+    println!("width {:.1} height {:.1}", graph.width(), graph.height());
     println!(
         "nodes {} persons {} bonds {}",
         graph.anim.node_count(),
@@ -60,6 +75,7 @@ fn print_tree(graph: &Graph, ged: &GedcomData) {
         order.push((generation, x, graph.node_label(n)));
     }
     order.sort_by(|a, b| {
+        debug_assert!(a.1.is_finite() && b.1.is_finite());
         a.0.cmp(&b.0)
             .then(a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
     });
@@ -69,16 +85,14 @@ fn print_tree(graph: &Graph, ged: &GedcomData) {
     let _ = ged;
 }
 
-fn render_file(path: &str, out: &str, scale: f32, person: Option<&str>) {
-    let ged = load(path);
+fn render_file(path: &str, out: &str, scale: f32, person: Option<&str>) -> Result<(), AppError> {
+    let ged = load(path)?;
     if ged.person_count() == 0 {
-        eprintln!("no people in {path}");
-        exit(1);
+        return Err(AppError::Empty(path.to_string()));
     }
     let fonts = Fonts::load();
     if fonts.regular.is_none() {
-        eprintln!("no system fonts found");
-        exit(1);
+        return Err(AppError::Fonts);
     }
     let sc = Scale::of(scale);
     let fulcrum = pick_fulcrum(&ged, person);
@@ -100,8 +114,8 @@ fn render_file(path: &str, out: &str, scale: f32, person: Option<&str>) {
         graph.set_max_bitmap_size(1000.0);
     }
     graph.place_nodes();
-    let img_w = (graph.get_width() * sc.s).round() as i32 + sc.pad_px() * 2;
-    let img_h = (graph.get_height() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let img_w = (graph.width() * sc.s).round() as i32 + sc.pad_px() * 2;
+    let img_h = (graph.height() * sc.s).round() as i32 + sc.pad_px() * 2;
     let svg = render_svg(
         &graph,
         &fonts,
@@ -112,18 +126,18 @@ fn render_file(path: &str, out: &str, scale: f32, person: Option<&str>) {
         img_h,
     );
     if std::fs::write(out, svg.as_bytes()).is_err() {
-        eprintln!("cannot write {out}");
-        exit(1);
+        return Err(AppError::Write(out.to_string()));
     }
     println!("Saved: {out} ({img_w}x{img_h}) scale={scale}");
+    Ok(())
 }
 
-fn main() {
+fn run() -> Result<(), AppError> {
     let args: Vec<String> = std::env::args().collect();
     let path = args.get(1).map(|s| s.as_str()).unwrap_or("example.ged");
     if path.ends_with(".svg") || path.ends_with(".png") {
         eprintln!("input must be a .ged file");
-        exit(1);
+        return Ok(());
     }
     if let Some(second) = args.get(2) {
         if second.ends_with(".svg") {
@@ -131,18 +145,16 @@ fn main() {
                 .get(3)
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(4.0);
-            render_file(path, second, scale, args.get(4).map(|s| s.as_str()));
-            return;
+            return render_file(path, second, scale, args.get(4).map(|s| s.as_str()));
         }
         if second.ends_with(".png") {
             eprintln!("png output removed, use .svg");
-            exit(1);
+            return Ok(());
         }
     }
-    let ged = load(path);
+    let ged = load(path)?;
     if ged.person_count() == 0 {
-        eprintln!("no people in {path}");
-        exit(1);
+        return Err(AppError::Empty(path.to_string()));
     }
     let fulcrum = pick_fulcrum(&ged, args.get(2).map(|s| s.as_str()));
     let mut graph = Graph::with_gedcom(ged.clone());
@@ -156,4 +168,15 @@ fn main() {
         ged.person(fulcrum).map(|p| p.id.as_str()).unwrap_or("?")
     );
     print_tree(&graph, &ged);
+    Ok(())
+}
+
+fn main() -> ExitCode {
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{e}");
+            ExitCode::FAILURE
+        }
+    }
 }

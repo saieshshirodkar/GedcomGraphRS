@@ -2,8 +2,9 @@ mod common;
 
 use common::{Builder, all_finite, gedcom_of, person_generation, run, run_sized};
 use gedcomgraph::Graph;
+use gedcomgraph::model::PersonId;
 
-fn tree() -> (Graph, u32, u32, u32, u32) {
+fn tree() -> (Graph, PersonId, PersonId, PersonId, PersonId) {
     let mut b = Builder::create();
     let dad = b.person("I1", "Dad /A/", Some("M"), false);
     let mom = b.person("I2", "Mom /A/", Some("F"), false);
@@ -52,9 +53,9 @@ fn bitmap_size_gating() {
     assert!(graph.need_max_bitmap_size());
     graph.set_max_bitmap_size(2000.0);
     assert!(!graph.need_max_bitmap_size());
-    assert_eq!(graph.get_max_bitmap_size(), 2000.0);
+    assert_eq!(graph.max_bitmap_size(), 2000.0);
     run(&mut graph, ful);
-    assert!(graph.get_biggest_path_size() >= 0.0);
+    assert!(graph.biggest_path_size() >= 0.0);
 }
 
 #[test]
@@ -70,8 +71,8 @@ fn left_to_right_mirrors() {
     let mut g2 = Graph::with_gedcom(b.finish());
     g2.set_layout_direction(true);
     run_sized(&mut g2, ful2, 60.0, 40.0);
-    assert_eq!(g1.get_width(), g2.get_width());
-    assert_eq!(g1.get_height(), g2.get_height());
+    assert_eq!(g1.width(), g2.width());
+    assert_eq!(g1.height(), g2.height());
 }
 
 #[test]
@@ -114,9 +115,9 @@ fn zero_descendant_generations() {
 #[test]
 fn spouses_lookup_order() {
     let (graph, dad, mom, _, _) = tree();
-    let spouses = graph.get_spouses(0, Option::None);
+    let spouses = graph.spouses(0, Option::None);
     assert_eq!(spouses, vec![dad, mom]);
-    assert_eq!(graph.get_spouses(0, Some(dad)), vec![mom]);
+    assert_eq!(graph.spouses(0, Some(dad.0)), vec![mom]);
 }
 
 #[test]
@@ -127,13 +128,13 @@ fn siblings_detection() {
         .anim
         .persons
         .iter()
-        .position(|p| p.person == ful)
+        .position(|p| PersonId(p.person) == ful)
         .map(|i| i as u32);
     let sib_node = graph
         .anim
         .persons
         .iter()
-        .position(|p| p.person == sib)
+        .position(|p| PersonId(p.person) == sib)
         .map(|i| i as u32);
     assert!(ful_node.is_some());
     assert!(sib_node.is_some());
@@ -151,7 +152,7 @@ fn default_spacing_matches_numbered() {
 #[test]
 fn person_size_api() {
     let (mut graph, _, _, ful, _) = tree();
-    graph.start_from(ful);
+    graph.start_from(ful.0);
     graph.set_person_size(0, 80.0, 50.0);
     graph.set_all_person_sizes(70.0, 45.0);
     graph.init_nodes();
@@ -161,7 +162,7 @@ fn person_size_api() {
         assert_eq!(person_generation(&graph, f), 0);
         assert_eq!(
             graph.person_gedcom_id(f),
-            graph.gedcom_person_id(gedcom_of(&graph, f))
+            graph.gedcom_person_id(gedcom_of(&graph, f).0)
         );
     }
 }

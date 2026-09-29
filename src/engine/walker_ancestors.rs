@@ -56,7 +56,7 @@ impl Graph {
         if parents.is_empty() {
             return;
         }
-        let family_ged = parents[parents.len() - 1];
+        let family_ged = parents[parents.len() - 1].0;
         let parent_gen = generation_up + 1;
         let parent_mini = parent_gen > self.ancestor_generations;
         let first_group = self.create_group(-parent_gen, parent_mini, Branch::None, false);

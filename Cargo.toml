@@ -26,3 +26,8 @@ unsafe_code = "warn"
 
 [lints.clippy]
 all = "warn"
+correctness = "deny"
+suspicious = "warn"
+style = "warn"
+complexity = "warn"
+perf = "warn"

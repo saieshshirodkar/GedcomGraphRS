@@ -1,23 +1,23 @@
-use crate::model::gedcom::GedcomData;
+use crate::model::gedcom::{FamilyId, GedcomData, PersonId};
 
 pub fn count_ancestors(ged: &GedcomData, person: u32) -> u32 {
     let mut amount = 1u32;
-    let mut stack: Vec<u32> = Vec::new();
-    stack.push(person);
+    let mut stack: Vec<PersonId> = Vec::with_capacity(8);
+    stack.push(PersonId(person));
     while let Some(cur) = stack.pop() {
         if amount > 100 {
             break;
         }
-        if let Some(p) = ged.person(cur) {
-            for fam in p.parent_fams.clone() {
-                if let Some(f) = ged.family(fam) {
-                    for h in f.husbands.clone() {
+        if let Some(p) = ged.person(cur.0) {
+            for fam in &p.parent_fams {
+                if let Some(f) = ged.family(fam.0) {
+                    for h in &f.husbands {
                         amount += 1;
-                        stack.push(h);
+                        stack.push(*h);
                     }
-                    for w in f.wives.clone() {
+                    for w in &f.wives {
                         amount += 1;
-                        stack.push(w);
+                        stack.push(*w);
                     }
                 }
             }
@@ -28,18 +28,18 @@ pub fn count_ancestors(ged: &GedcomData, person: u32) -> u32 {
 
 pub fn count_descendants(ged: &GedcomData, person: u32) -> u32 {
     let mut amount = 1u32;
-    let mut stack: Vec<u32> = Vec::new();
-    stack.push(person);
+    let mut stack: Vec<PersonId> = Vec::with_capacity(8);
+    stack.push(PersonId(person));
     while let Some(cur) = stack.pop() {
         if amount > 100 {
             break;
         }
-        if let Some(p) = ged.person(cur) {
-            for fam in p.spouse_fams.clone() {
-                if let Some(f) = ged.family(fam) {
-                    for c in f.children.clone() {
+        if let Some(p) = ged.person(cur.0) {
+            for fam in &p.spouse_fams {
+                if let Some(f) = ged.family(fam.0) {
+                    for c in &f.children {
                         amount += 1;
-                        stack.push(c);
+                        stack.push(*c);
                     }
                 }
             }
@@ -48,7 +48,7 @@ pub fn count_descendants(ged: &GedcomData, person: u32) -> u32 {
     amount
 }
 
-pub fn parent_family_last(ged: &GedcomData, person: u32) -> Option<u32> {
+pub fn parent_family_last(ged: &GedcomData, person: u32) -> Option<FamilyId> {
     ged.person(person)
         .and_then(|p| p.parent_fams.last().copied())
 }
@@ -62,8 +62,8 @@ pub fn family_marriage_date(ged: &GedcomData, family: u32) -> Option<String> {
     })
 }
 
-pub fn spouses_of(ged: &GedcomData, family: u32, excluded: Option<u32>) -> Vec<u32> {
-    let mut out: Vec<u32> = Vec::new();
+pub fn spouses_of(ged: &GedcomData, family: u32, excluded: Option<PersonId>) -> Vec<PersonId> {
+    let mut out: Vec<PersonId> = Vec::with_capacity(2);
     if let Some(f) = ged.family(family) {
         if let Some(h) = f.husbands.first() {
             out.push(*h);
@@ -133,8 +133,11 @@ mod tests {
     #[test]
     fn spouses_and_marriage() {
         let g = sample();
-        assert_eq!(spouses_of(&g, 0, Option::None), vec![0, 1]);
-        assert_eq!(spouses_of(&g, 0, Some(0)), vec![1]);
+        assert_eq!(
+            spouses_of(&g, 0, Option::None),
+            vec![PersonId(0), PersonId(1)]
+        );
+        assert_eq!(spouses_of(&g, 0, Some(PersonId(0))), vec![PersonId(1)]);
         assert_eq!(family_marriage_date(&g, 0), Some("1895".to_string()));
         assert_eq!(family_marriage_date(&g, 9), Option::None);
         assert_eq!(parent_family_last(&g, 0), Option::None);
@@ -143,7 +146,7 @@ mod tests {
     #[test]
     fn ancestor_count_caps() {
         let mut g = GedcomData::empty();
-        let mut prev: Option<u32> = Option::None;
+        let mut prev: Option<PersonId> = Option::None;
         for i in 0..105 {
             let p = g.push_person(GPerson {
                 id: format!("I{i}"),
@@ -173,7 +176,7 @@ mod tests {
     #[test]
     fn spouses_truncate_to_two() {
         let mut g = GedcomData::empty();
-        let mut ids: Vec<u32> = Vec::new();
+        let mut ids: Vec<PersonId> = Vec::new();
         for id in ["I1", "I2", "I3"] {
             ids.push(g.push_person(GPerson {
                 id: id.to_string(),
@@ -192,6 +195,6 @@ mod tests {
         });
         g.link_spouses(f, &[ids[0], ids[1]], &[ids[2]]);
         g.reindex();
-        assert_eq!(spouses_of(&g, f, Option::None), vec![ids[0], ids[2]]);
+        assert_eq!(spouses_of(&g, f.0, Option::None), vec![ids[0], ids[2]]);
     }
 }

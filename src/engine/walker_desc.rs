@@ -1,6 +1,7 @@
 use crate::config::{Branch, Card, Side};
 use crate::core::node_base::NodeId;
 use crate::engine::graph::Graph;
+use crate::model::gedcom::PersonId;
 
 impl Graph {
     pub(crate) fn find_half_siblings(&mut self, parent_node: u32, excluded: u32, side: Side) {
@@ -21,23 +22,23 @@ impl Graph {
         let mut start = 0usize;
         let mut end = families.len();
         if side == Side::Left {
-            end = families.iter().position(|f| *f == excluded).unwrap_or(0);
+            end = families.iter().position(|f| f.0 == excluded).unwrap_or(0);
         } else if side == Side::Right {
             start = families
                 .iter()
-                .position(|f| *f == excluded)
+                .position(|f| f.0 == excluded)
                 .map(|v| v + 1)
                 .unwrap_or(end);
         }
-        let mut halves: Vec<u32> = Vec::new();
+        let mut halves: Vec<PersonId> = Vec::new();
         for f in families[start.min(families.len())..end.min(families.len())]
             .iter()
             .copied()
         {
-            if f == excluded {
+            if f.0 == excluded {
                 continue;
             }
-            if let Some(fam) = self.gedcom.family(f) {
+            if let Some(fam) = self.gedcom.family(f.0) {
                 halves.extend(fam.children.clone());
             }
         }
@@ -45,7 +46,7 @@ impl Graph {
             if self.sibling_nephew_generations > 0 {
                 let fg = self.fulcrum_group;
                 let genus = self.find_person_genus(
-                    hs,
+                    hs.0,
                     Some(NodeId::Person(parent_node)),
                     0,
                     Card::Regular,
@@ -74,7 +75,7 @@ impl Graph {
         if self.anim.node_is_duplicate(common) {
             return;
         }
-        let mut children: Vec<u32> = Vec::new();
+        let mut children: Vec<PersonId> = Vec::new();
         if let Some(sf) = self.node_spouse_family(common) {
             children.extend(
                 self.gedcom
@@ -97,7 +98,7 @@ impl Graph {
             {
                 children.extend(
                     self.gedcom
-                        .family(fam)
+                        .family(fam.0)
                         .map(|f| f.children.clone())
                         .unwrap_or_default(),
                 );
@@ -123,7 +124,7 @@ impl Graph {
                 Card::Regular
             };
             let genus = self.find_person_genus(
-                child,
+                child.0,
                 Some(common),
                 child_generation,
                 kind,

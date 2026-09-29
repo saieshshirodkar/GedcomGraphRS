@@ -45,11 +45,11 @@ impl Graph {
         let mut end = uncles.len();
         if branch == Branch::None {
             if side == Side::Left {
-                if let Some(pos) = uncles.iter().position(|u| *u == person_idx) {
+                if let Some(pos) = uncles.iter().position(|u| u.0 == person_idx) {
                     end = pos;
                 }
             } else if side == Side::Right {
-                if let Some(pos) = uncles.iter().position(|u| *u == person_idx) {
+                if let Some(pos) = uncles.iter().position(|u| u.0 == person_idx) {
                     start = pos + 1;
                 } else {
                     start = end;
@@ -59,11 +59,11 @@ impl Graph {
         let mut position = 0usize;
         for uncle in uncles.iter().take(end.min(uncles.len())).skip(start) {
             let uncle = *uncle;
-            if self.group_contains_person(group, uncle) {
+            if self.group_contains_person(group, uncle.0) {
                 continue;
             }
             let genus = self.find_person_genus(
-                uncle,
+                uncle.0,
                 Some(org),
                 -generation_up,
                 Card::Regular,
@@ -105,19 +105,12 @@ impl Graph {
     }
 
     pub(crate) fn group_contains_person(&self, gid: u32, person: u32) -> bool {
-        let target = self
-            .gedcom
-            .person(person)
-            .map(|p| p.id.clone())
-            .unwrap_or_default();
         if let Some(g) = self.anim.groups.get(gid as usize) {
             for nid in g.list.clone() {
                 for p in self.anim.node_persons(nid) {
                     if let Some(q) = self.anim.persons.get(p as usize) {
-                        if let Some(gp) = self.gedcom.person(q.person) {
-                            if gp.id == target {
-                                return true;
-                            }
+                        if q.person == person {
+                            return true;
                         }
                     }
                 }

@@ -2,6 +2,7 @@ use crate::config::{Card, Match, Side};
 use crate::core::node_base::NodeId;
 use crate::engine::graph::Graph;
 use crate::layout::rows::Genus;
+use crate::model::gedcom::PersonId;
 use crate::model::helpers::person_is_female;
 
 impl Graph {
@@ -38,7 +39,7 @@ impl Graph {
             .get(famid as usize)
             .map(|f| f.spouse_family)
             .unwrap_or(u32::MAX);
-        families.retain(|f| *f != main_fam);
+        families.retain(|f| f.0 != main_fam);
         let generation = self
             .anim
             .persons
@@ -52,9 +53,9 @@ impl Graph {
             .and_then(|p| p.origin);
         let total = families.len();
         for (i, next_family) in families.clone().into_iter().enumerate() {
-            let stamp = Match::get_for_ancestors(total, i, side);
+            let stamp = Match::for_ancestors(total, i, side);
             let next = self.create_next_family_node(
-                next_family,
+                next_family.0,
                 person_idx,
                 generation,
                 side,
@@ -142,14 +143,14 @@ impl Graph {
         let mut straight = true;
         if families.len() > 1 {
             if side == Side::Left {
-                let last = families[families.len() - 1];
-                let spouses = self.get_spouses(last, Option::None);
-                if spouses.get(1).copied() == Some(person) {
+                let last = families[families.len() - 1].0;
+                let spouses = self.spouses(last, Option::None);
+                if spouses.get(1).copied() == Some(PersonId(person)) {
                     straight = false;
                 }
             } else {
-                let spouses = self.get_spouses(families[0], Option::None);
-                if spouses.first().copied() == Some(person) {
+                let spouses = self.spouses(families[0].0, Option::None);
+                if spouses.first().copied() == Some(PersonId(person)) {
                     straight = false;
                 }
             }
@@ -157,10 +158,17 @@ impl Graph {
         for (i, family) in families.clone().into_iter().enumerate() {
             let stamp = Match::get(families.len(), i, side, straight);
             let node = if stamp == Match::Main {
-                self.create_node_from_person(person, Some(family), parent, generation, kind, stamp)
+                self.create_node_from_person(
+                    person,
+                    Some(family.0),
+                    parent,
+                    generation,
+                    kind,
+                    stamp,
+                )
             } else {
                 NodeId::Family(
-                    self.create_next_family_node(family, person, generation, side, stamp, parent),
+                    self.create_next_family_node(family.0, person, generation, side, stamp, parent),
                 )
             };
             if let Some(g) = group {

@@ -79,7 +79,7 @@ mod tests {
         });
         ged.reindex();
         let mut graph = Graph::with_gedcom(ged);
-        graph.start_from(a);
+        graph.start_from(a.0);
         measure_all(&mut graph, &fonts, &sc);
         for p in &graph.anim.persons {
             assert!(p.base.w > 0.0);

@@ -1,6 +1,7 @@
 use crate::config::VERTICAL_SPACE;
 use crate::core::node_base::NodeId;
 use crate::engine::graph::Graph;
+use std::fmt::Write as _;
 
 impl Graph {
     pub fn gedcom_person_id(&self, person: u32) -> String {
@@ -44,7 +45,7 @@ impl Graph {
         let mut out = String::new();
         for n in &self.anim.nodes {
             let generation = self.anim.node_generation(*n);
-            out.push_str(&format!("{generation}:  | {} |\n", self.node_label(*n)));
+            let _ = writeln!(out, "{generation}:  | {} |", self.node_label(*n));
         }
         out
     }
@@ -86,11 +87,11 @@ impl Graph {
     pub fn vertical_space_default() -> f32 {
         VERTICAL_SPACE
     }
-    pub fn get_width(&self) -> f32 {
+    pub fn width(&self) -> f32 {
         self.anim.width
     }
 
-    pub fn get_height(&self) -> f32 {
+    pub fn height(&self) -> f32 {
         self.anim.height
     }
 
@@ -102,11 +103,11 @@ impl Graph {
         self.anim.max_bitmap_size = size;
     }
 
-    pub fn get_max_bitmap_size(&self) -> f32 {
+    pub fn max_bitmap_size(&self) -> f32 {
         self.anim.max_bitmap_size
     }
 
-    pub fn get_biggest_path_size(&self) -> f32 {
+    pub fn biggest_path_size(&self) -> f32 {
         self.anim.biggest_path_size
     }
 

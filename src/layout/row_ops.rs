@@ -4,14 +4,6 @@ use crate::engine::animator::Animator;
 use crate::model::gedcom::GedcomData;
 
 impl Animator {
-    pub(crate) fn gedcom_person_id(&self, ged: &GedcomData, pid: u32) -> String {
-        self.persons
-            .get(pid as usize)
-            .and_then(|p| ged.person(p.person))
-            .map(|g| g.id.clone())
-            .unwrap_or_default()
-    }
-
     pub(crate) fn node_label(&self, ged: &GedcomData, nid: NodeId) -> String {
         match nid {
             NodeId::Person(i) => {

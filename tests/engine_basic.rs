@@ -2,8 +2,9 @@ mod common;
 
 use common::{Builder, all_finite, gedcom_of, person_generation, run, run_sized};
 use gedcomgraph::Graph;
+use gedcomgraph::model::PersonId;
 
-fn solo() -> (Graph, u32) {
+fn solo() -> (Graph, PersonId) {
     let mut b = Builder::create();
     let a = b.person("I1", "Alice /Smith/", Option::None, false);
     let ged = b.finish();
@@ -33,7 +34,12 @@ fn person_with_two_parents() {
     let ged = b.finish();
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, kid);
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&mom));
     assert!(ids.contains(&dad));
     assert!(ids.contains(&kid));
@@ -52,7 +58,12 @@ fn spouse_and_children() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, dad);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&c1));
     assert!(ids.contains(&c2));
     assert!(ids.contains(&mom));
@@ -74,8 +85,8 @@ fn three_generations() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    assert!(graph.get_width().is_finite());
-    assert!(graph.get_height().is_finite());
+    assert!(graph.width().is_finite());
+    assert!(graph.height().is_finite());
 }
 
 #[test]
@@ -92,7 +103,12 @@ fn multi_marriage_second_union() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, k1);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&man));
 }
 
@@ -168,10 +184,10 @@ fn ancestors_negative_descendants_positive() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, ful);
     for (i, p) in graph.anim.persons.iter().enumerate() {
-        if p.person == gp || p.person == gm {
+        if PersonId(p.person) == gp || PersonId(p.person) == gm {
             assert!(p.base.generation < 0, "ancestor gen {}", p.base.generation);
         }
-        if p.person == chd {
+        if PersonId(p.person) == chd {
             assert!(p.base.generation > 0, "child gen {}", p.base.generation);
         }
         let _ = i;
@@ -190,7 +206,12 @@ fn siblings_share_row() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, a);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&sib));
 }
 
@@ -206,7 +227,7 @@ fn sized_run_keeps_finite() {
     let mut graph = Graph::with_gedcom(ged);
     run_sized(&mut graph, k1, 60.0, 40.0);
     assert!(all_finite(&graph));
-    assert!(graph.get_width() >= 60.0);
+    assert!(graph.width() >= 60.0);
 }
 
 #[test]

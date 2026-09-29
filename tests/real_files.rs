@@ -1,7 +1,7 @@
 mod common;
 
 use common::{Builder, all_finite, gedcom_of, person_generation, run, run_sized};
-use gedcomgraph::model::{Fact, GPerson, GedcomData, Name};
+use gedcomgraph::model::{Fact, GPerson, GedcomData, Name, PersonId};
 use gedcomgraph::{Graph, parse_gedcom};
 
 fn load(path: &str) -> Graph {
@@ -18,8 +18,8 @@ fn example_ged_smoke() {
     assert!(graph.anim.node_count() >= 5);
     assert!(graph.anim.person_count() >= 7);
     assert!(all_finite(&graph));
-    assert!(graph.get_width() > 0.0);
-    assert!(graph.get_height() > 0.0);
+    assert!(graph.width() > 0.0);
+    assert!(graph.height() > 0.0);
     assert!(!graph.anim.bond_views().is_empty());
     assert!(!graph.anim.line_groups.is_empty());
 }
@@ -60,19 +60,21 @@ fn builder_mirrors_example_structure() {
 fn demo_ged_smoke() {
     let mut graph = load("demo.ged");
     assert!(graph.gedcom.person_count() >= 10);
-    let ful = graph.gedcom.find_person("I14").unwrap_or(0);
+    let ful = graph.gedcom.find_person("I14").unwrap_or(PersonId(0));
     graph.set_max_bitmap_size(2000.0);
     run(&mut graph, ful);
     assert!(graph.anim.node_count() >= 5);
     assert!(all_finite(&graph));
-    assert!(graph.get_width().is_finite());
-    assert!(graph.get_height().is_finite());
+    assert!(graph.width().is_finite());
+    assert!(graph.height().is_finite());
 }
 
 #[test]
 fn demo_every_person_as_fulcrum() {
     let base = load("demo.ged");
-    let ids: Vec<u32> = (0..base.gedcom.person_count() as u32).collect();
+    let ids: Vec<PersonId> = (0..u32::try_from(base.gedcom.person_count()).unwrap_or(u32::MAX))
+        .map(PersonId)
+        .collect();
     for ful in ids {
         let mut graph = load("demo.ged");
         run(&mut graph, ful);
@@ -83,14 +85,16 @@ fn demo_every_person_as_fulcrum() {
 #[test]
 fn example_every_person_as_fulcrum() {
     let base = load("example.ged");
-    let ids: Vec<u32> = (0..base.gedcom.person_count() as u32).collect();
+    let ids: Vec<PersonId> = (0..u32::try_from(base.gedcom.person_count()).unwrap_or(u32::MAX))
+        .map(PersonId)
+        .collect();
     assert!(ids.len() >= 50);
     for ful in ids {
         let mut graph = load("example.ged");
         run(&mut graph, ful);
         assert!(all_finite(&graph), "finite from fulcrum {ful}");
-        assert!(graph.get_width() >= 0.0);
-        assert!(graph.get_height() >= 0.0);
+        assert!(graph.width() >= 0.0);
+        assert!(graph.height() >= 0.0);
     }
 }
 
@@ -114,8 +118,13 @@ fn edge_two_person_parent_child() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
-    assert!(ids.contains(&0));
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
+    assert!(ids.contains(&PersonId(0)));
 }
 
 #[test]
@@ -131,7 +140,12 @@ fn edge_multi_marriage_without_children() {
     let mut graph = Graph::with_gedcom(ged);
     run(&mut graph, ful);
     assert!(all_finite(&graph));
-    let ids: Vec<u32> = graph.anim.persons.iter().map(|p| p.person).collect();
+    let ids: Vec<PersonId> = graph
+        .anim
+        .persons
+        .iter()
+        .map(|p| PersonId(p.person))
+        .collect();
     assert!(ids.contains(&ful));
 }
 
@@ -156,7 +170,7 @@ fn edge_same_birth_and_death_dates() {
         .anim
         .persons
         .iter()
-        .find(|p| p.person == ful)
+        .find(|p| PersonId(p.person) == ful)
         .expect("node");
     assert!(node.dead);
 }
@@ -183,7 +197,7 @@ fn example_full_depth_shows_all_descendants() {
             .anim
             .persons
             .iter()
-            .find(|q| q.person == p)
+            .find(|q| PersonId(q.person) == p)
             .expect("node");
         assert!(!node.base.mini, "{id} renders as full card");
     }
@@ -206,7 +220,7 @@ fn example_inlaw_parents_hidden() {
     for id in ["I18", "I19", "I20", "I21"] {
         let p = graph.gedcom.find_person(id).expect("person");
         assert!(
-            graph.anim.persons.iter().all(|q| q.person != p),
+            graph.anim.persons.iter().all(|q| PersonId(q.person) != p),
             "{id} has no card"
         );
     }

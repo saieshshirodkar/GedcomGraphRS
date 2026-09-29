@@ -3,8 +3,17 @@ mod common;
 use common::{Builder, all_finite, gedcom_of, person_generation, run, run_sized};
 use gedcomgraph::Branch;
 use gedcomgraph::core::NodeId;
+use gedcomgraph::model::PersonId;
 
-fn three_gen() -> (gedcomgraph::Graph, u32, u32, u32, u32, u32, u32) {
+fn three_gen() -> (
+    gedcomgraph::Graph,
+    PersonId,
+    PersonId,
+    PersonId,
+    PersonId,
+    PersonId,
+    PersonId,
+) {
     let mut b = Builder::create();
     let gp = b.person("I1", "GP /A/", Some("M"), true);
     let gm = b.person("I2", "GM /A/", Some("F"), true);
@@ -198,7 +207,7 @@ fn fulcrum_lives_in_ancestor_union() {
         graph
             .gedcom
             .find_person(&graph.person_gedcom_id(fi))
-            .unwrap_or(u32::MAX),
+            .unwrap_or(PersonId(u32::MAX)),
         gedcom_of(&graph, fi)
     );
     assert!(
