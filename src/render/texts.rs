@@ -119,6 +119,9 @@ pub fn date_lines(ged: &GedcomData, person: u32) -> Vec<String> {
         lines.push(death_line);
     } else if let Some(p) = ged.person(person) {
         for f in &p.facts {
+            if f.tag == "CHAN" {
+                continue;
+            }
             if let Some(d) = &f.date {
                 lines.push(d.clone());
                 break;

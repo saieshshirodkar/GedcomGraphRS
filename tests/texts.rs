@@ -121,4 +121,10 @@ mod tests {
             ]
         );
     }
+
+    #[test]
+    fn chan_date_never_shows() {
+        let (g, p) = ged_one("A /B/", vec![Fact::dated("CHAN", Some("8 FEB 2021"))]);
+        assert!(date_lines(&g, p.0).is_empty());
+    }
 }
