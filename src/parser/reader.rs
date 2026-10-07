@@ -53,6 +53,8 @@ pub(crate) fn parse_line(line: &str) -> Option<(i32, String, String, String)> {
 
 pub(crate) fn build_arena(text: &str) -> Arena {
     let mut arena = Arena::default();
+    arena.nodes.reserve(text.len() / 24);
+    arena.kids.reserve(text.len() / 24);
     let mut stack: Vec<(i32, usize)> = Vec::new();
     for line in text.lines() {
         let Some((level, xref, tag, value)) = parse_line(line) else {

@@ -91,9 +91,19 @@ impl Graph {
         }
         if let Some(fid) = family_id {
             self.anim.add_node(NodeId::Family(fid));
+            let partners = self
+                .anim
+                .families
+                .get(fid as usize)
+                .map(|f| f.partners.clone())
+                .unwrap_or_default();
+            for q in partners {
+                self.anim.register_person(q);
+            }
             NodeId::Family(fid)
         } else {
             self.anim.add_node(NodeId::Person(pid));
+            self.anim.register_person(pid);
             NodeId::Person(pid)
         }
     }

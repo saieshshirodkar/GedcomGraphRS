@@ -7,6 +7,76 @@ use crate::render::theme::{
     COLOR_MALE, COLOR_UNDEFINED, Scale,
 };
 
+#[inline]
+fn rhe(x: f64) -> f64 {
+    let f = x.floor();
+    let d = x - f;
+    let up = if d > 0.5 {
+        true
+    } else if d < 0.5 {
+        false
+    } else {
+        (f as i64) % 2 != 0
+    };
+    if up { f + 1.0 } else { f }
+}
+
+fn push_u64(s: &mut String, mut n: u64) {
+    let mut buf = [0u8; 20];
+    let mut i = buf.len();
+    loop {
+        i -= 1;
+        buf[i] = b'0' + (n % 10) as u8;
+        n /= 10;
+        if n == 0 {
+            break;
+        }
+    }
+    for b in &buf[i..] {
+        s.push(char::from(*b));
+    }
+}
+
+fn scaled(v: f32, mul: f64) -> Option<i64> {
+    if !v.is_finite() || v.abs() > 1.0e6 {
+        return Option::None;
+    }
+    Some(rhe(f64::from(v) * mul) as i64)
+}
+
+pub(crate) fn fx1(v: f32) -> String {
+    let Some(i) = scaled(v, 10.0) else {
+        return format!("{v:.1}");
+    };
+    let mut s = String::with_capacity(12);
+    if i < 0 {
+        s.push('-');
+    }
+    let m = i.unsigned_abs();
+    push_u64(&mut s, m / 10);
+    s.push('.');
+    s.push(char::from(b'0' + (m % 10) as u8));
+    if i == 0 && v.is_sign_negative() {
+        s.insert(0, '-');
+    }
+    s
+}
+
+pub(crate) fn fx0(v: f32) -> String {
+    let Some(i) = scaled(v, 1.0) else {
+        return format!("{v:.0}");
+    };
+    let mut s = String::with_capacity(12);
+    if i < 0 {
+        s.push('-');
+    }
+    push_u64(&mut s, i.unsigned_abs());
+    if i == 0 && v.is_sign_negative() {
+        s.insert(0, '-');
+    }
+    s
+}
+
 pub(crate) fn hex(c: [u8; 4]) -> String {
     format!("#{:02X}{:02X}{:02X}", c[0], c[1], c[2])
 }
@@ -68,17 +138,24 @@ pub(crate) fn text_el(
     } else {
         ""
     };
-    format!(
-        "<text x=\"{:.1}\" y=\"{:.1}\" font-family=\"sans-serif\" font-size=\"{:.0}\"{}{} fill=\"{}\"{} text-anchor=\"middle\">{}</text>\n",
-        x,
-        baseline,
-        px,
-        weight,
-        slant,
-        hex(fill),
-        alpha(fill),
-        esc(body)
-    )
+    let mut o = String::with_capacity(96 + body.len());
+    o.push_str("<text x=\"");
+    o.push_str(&fx1(x));
+    o.push_str("\" y=\"");
+    o.push_str(&fx1(baseline));
+    o.push_str("\" font-family=\"sans-serif\" font-size=\"");
+    o.push_str(&fx0(px));
+    o.push('"');
+    o.push_str(weight);
+    o.push_str(slant);
+    o.push_str(" fill=\"");
+    o.push_str(&hex(fill));
+    o.push('"');
+    o.push_str(&alpha(fill));
+    o.push_str(" text-anchor=\"middle\">");
+    o.push_str(&esc(body));
+    o.push_str("</text>\n");
+    o
 }
 
 pub fn render_svg(
@@ -100,31 +177,64 @@ pub fn render_svg(
         let x2 = sc.sf(l.x2) + ox;
         let y2 = sc.sf(l.y2) + oy;
         if matches!(l.kind, LineKind::Curve { .. }) {
-            s.push_str(&format!(
-                "<path d=\"M{x1:.1} {y1:.1} C{x1:.1} {y2:.1} {x2:.1} {y1:.1} {x2:.1} {y2:.1}\" stroke=\"{}\" stroke-width=\"{:.1}\" fill=\"none\"/>\n",
-                hex(COLOR_LINES),
-                2.0 * sc.s
-            ));
+            s.push_str("<path d=\"M");
+            s.push_str(&fx1(x1));
+            s.push(' ');
+            s.push_str(&fx1(y1));
+            s.push(' ');
+            s.push('C');
+            s.push_str(&fx1(x1));
+            s.push(' ');
+            s.push_str(&fx1(y2));
+            s.push(' ');
+            s.push_str(&fx1(x2));
+            s.push(' ');
+            s.push_str(&fx1(y1));
+            s.push(' ');
+            s.push_str(&fx1(x2));
+            s.push(' ');
+            s.push_str(&fx1(y2));
+            s.push_str("\" stroke=\"");
+            s.push_str(&hex(COLOR_LINES));
+            s.push_str("\" stroke-width=\"");
+            s.push_str(&fx1(2.0 * sc.s));
+            s.push_str("\" fill=\"none\"/>\n");
         } else {
-            s.push_str(&format!(
-                "<path d=\"M{x1:.1} {y1:.1} L{x2:.1} {y2:.1}\" stroke=\"{}\" stroke-width=\"{:.1}\" fill=\"none\"/>\n",
-                hex(COLOR_LINES),
-                2.0 * sc.s
-            ));
+            s.push_str("<path d=\"M");
+            s.push_str(&fx1(x1));
+            s.push(' ');
+            s.push_str(&fx1(y1));
+            s.push(' ');
+            s.push('L');
+            s.push_str(&fx1(x2));
+            s.push(' ');
+            s.push_str(&fx1(y2));
+            s.push_str("\" stroke=\"");
+            s.push_str(&hex(COLOR_LINES));
+            s.push_str("\" stroke-width=\"");
+            s.push_str(&fx1(2.0 * sc.s));
+            s.push_str("\" fill=\"none\"/>\n");
         }
     }
     for l in &graph.anim.back_lines {
-        s.push_str(&format!(
-            "<path d=\"M{:.1} {:.1} L{:.1} {:.1}\" stroke=\"{}\" stroke-width=\"{:.1}\" stroke-dasharray=\"{:.1} {:.1}\" fill=\"none\"/>\n",
-            sc.si(l.x1) as f32 + ox,
-            sc.si(l.y1) as f32 + oy,
-            sc.si(l.x2) as f32 + ox,
-            sc.si(l.y2) as f32 + oy,
-            hex(COLOR_BACK_LINES),
-            1.5 * sc.s,
-            4.0 * sc.s,
-            4.0 * sc.s
-        ));
+        s.push_str("<path d=\"M");
+        s.push_str(&fx1(sc.si(l.x1) as f32 + ox));
+        s.push(' ');
+        s.push_str(&fx1(sc.si(l.y1) as f32 + oy));
+        s.push(' ');
+        s.push('L');
+        s.push_str(&fx1(sc.si(l.x2) as f32 + ox));
+        s.push(' ');
+        s.push_str(&fx1(sc.si(l.y2) as f32 + oy));
+        s.push_str("\" stroke=\"");
+        s.push_str(&hex(COLOR_BACK_LINES));
+        s.push_str("\" stroke-width=\"");
+        s.push_str(&fx1(1.5 * sc.s));
+        s.push_str("\" stroke-dasharray=\"");
+        s.push_str(&fx1(4.0 * sc.s));
+        s.push(' ');
+        s.push_str(&fx1(4.0 * sc.s));
+        s.push_str("\" fill=\"none\"/>\n");
     }
     for b in graph.anim.bond_views() {
         let bx = sc.sf(graph.anim.families[b.owner as usize]
@@ -141,13 +251,15 @@ pub fn render_svg(
             + oy;
         let has_date = b.marriage_date.is_some();
         let d = if has_date || b.w >= 20.0 { 8.0 } else { 6.0 } * sc.s;
-        s.push_str(&format!(
-            "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"{:.1}\" fill=\"{}\"/>\n",
-            bx + sc.sf(b.w) / 2.0,
-            by + sc.sf(b.h) / 2.0,
-            d / 2.0,
-            hex(COLOR_HEARTH)
-        ));
+        s.push_str("<circle cx=\"");
+        s.push_str(&fx1(bx + sc.sf(b.w) / 2.0));
+        s.push_str("\" cy=\"");
+        s.push_str(&fx1(by + sc.sf(b.h) / 2.0));
+        s.push_str("\" r=\"");
+        s.push_str(&fx1(d / 2.0));
+        s.push_str("\" fill=\"");
+        s.push_str(&hex(COLOR_HEARTH));
+        s.push_str("\"/>\n");
     }
     for dl in &graph.anim.duplicate_lines {
         let c = match dl.gender {
@@ -155,17 +267,24 @@ pub fn render_svg(
             Gender::Female => COLOR_FEMALE,
             _ => COLOR_DUP_DEFAULT,
         };
-        s.push_str(&format!(
-            "<path d=\"M{:.1} {:.1} Q{:.1} {:.1} {:.1} {:.1}\" stroke=\"{}\" stroke-width=\"{:.1}\" stroke-linecap=\"round\" fill=\"none\"/>\n",
-            sc.sf(dl.x1) + ox,
-            sc.sf(dl.y1) + oy,
-            sc.sf(dl.x3) + ox,
-            sc.sf(dl.y3) + oy,
-            sc.sf(dl.x2) + ox,
-            sc.sf(dl.y2) + oy,
-            hex(c),
-            2.0 * sc.s
-        ));
+        s.push_str("<path d=\"M");
+        s.push_str(&fx1(sc.sf(dl.x1) + ox));
+        s.push(' ');
+        s.push_str(&fx1(sc.sf(dl.y1) + oy));
+        s.push(' ');
+        s.push('Q');
+        s.push_str(&fx1(sc.sf(dl.x3) + ox));
+        s.push(' ');
+        s.push_str(&fx1(sc.sf(dl.y3) + oy));
+        s.push(' ');
+        s.push_str(&fx1(sc.sf(dl.x2) + ox));
+        s.push(' ');
+        s.push_str(&fx1(sc.sf(dl.y2) + oy));
+        s.push_str("\" stroke=\"");
+        s.push_str(&hex(c));
+        s.push_str("\" stroke-width=\"");
+        s.push_str(&fx1(2.0 * sc.s));
+        s.push_str("\" stroke-linecap=\"round\" fill=\"none\"/>\n");
     }
     super::svg_cards::draw_cards(&mut s, graph, fonts, sc, ox, oy);
     s.push_str("</g>\n</svg>\n");
@@ -245,6 +364,55 @@ mod tests {
             trunc(&fonts, "Hi".to_string(), 1000.0, 68.0, Style::Bold),
             "Hi"
         );
+    }
+
+    #[test]
+    fn fx1_matches_std_format() {
+        let mut s: u32 = 22222;
+        let mut checked = 0u32;
+        for _ in 0..300_000 {
+            s = s.wrapping_mul(1664525).wrapping_add(1013904223);
+            let v = f32::from_bits(s);
+            if !v.is_finite() || v.abs() > 1.0e6 {
+                continue;
+            }
+            checked += 1;
+            assert_eq!(fx1(v), format!("{v:.1}"), "fx1 mismatch on {v:?}");
+            assert_eq!(fx0(v), format!("{v:.0}"), "fx0 mismatch on {v:?}");
+        }
+        assert!(checked > 100_000, "sample too small: {checked}");
+    }
+
+    #[test]
+    fn fx1_matches_std_on_dense_grid() {
+        for i in -200_000i64..200_000 {
+            let v = (i as f64 * 0.0007) as f32;
+            assert_eq!(fx1(v), format!("{v:.1}"), "fx1 grid mismatch on {v:?}");
+            assert_eq!(fx0(v), format!("{v:.0}"), "fx0 grid mismatch on {v:?}");
+        }
+    }
+
+    #[test]
+    fn fx_handles_edges() {
+        for v in [
+            0.0f32,
+            -0.0,
+            0.05,
+            -0.05,
+            0.25,
+            0.35,
+            1.05,
+            2.5,
+            -0.25,
+            1e30,
+            -1e30,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NAN,
+        ] {
+            assert_eq!(fx1(v), format!("{v:.1}"), "edge fx1 on {v:?}");
+            assert_eq!(fx0(v), format!("{v:.0}"), "edge fx0 on {v:?}");
+        }
     }
 
     #[test]

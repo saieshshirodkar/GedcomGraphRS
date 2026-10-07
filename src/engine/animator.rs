@@ -7,6 +7,7 @@ use crate::lines::duplicate::DupLine;
 use crate::lines::segments::LineSeg;
 use crate::nodes::family::FamilyNodeData;
 use crate::nodes::person::PersonNodeData;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]
 pub struct LineRowScratch {
@@ -40,6 +41,8 @@ pub struct Animator {
     pub line_groups: Vec<Vec<LineSeg>>,
     pub back_line_groups: Vec<Vec<LineSeg>>,
     pub duplicate_lines: Vec<DupLine>,
+    pub dup_by_person: HashMap<u32, Vec<u32>>,
+    pub dup_by_genfam: HashMap<(i32, u32), Vec<u32>>,
     pub groups: Vec<Group>,
     pub group_seq: Vec<u32>,
     pub unions: Vec<Union>,
@@ -75,6 +78,8 @@ impl Animator {
         self.unions.clear();
         self.line_rows.clear();
         self.back_rows.clear();
+        self.dup_by_person.clear();
+        self.dup_by_genfam.clear();
         self.width = 0.0;
         self.height = 0.0;
         self.biggest_path_size = 0.0;
@@ -82,6 +87,27 @@ impl Animator {
 
     pub(crate) fn add_node(&mut self, nid: NodeId) {
         self.nodes.push(nid);
+    }
+
+    pub(crate) fn register_person(&mut self, pid: u32) {
+        let key = self.persons.get(pid as usize).and_then(|p| {
+            if p.base.mini {
+                return Option::None;
+            }
+            Some((p.person, p.base.generation, p.family))
+        });
+        let Some((person, generation, family)) = key else {
+            return;
+        };
+        self.dup_by_person.entry(person).or_default().push(pid);
+        if let Some(fam) = family
+            && let Some(f) = self.families.get(fam as usize)
+        {
+            self.dup_by_genfam
+                .entry((generation, f.spouse_family))
+                .or_default()
+                .push(pid);
+        }
     }
 
     pub(crate) fn alloc_person(&mut self, node: PersonNodeData) -> u32 {

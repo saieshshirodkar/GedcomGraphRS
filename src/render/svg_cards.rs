@@ -1,11 +1,55 @@
 use crate::engine::graph::Graph;
 use crate::render::font_draw::{Fonts, Style};
-use crate::render::svg::{alpha, border_of, hex, text_el, trunc};
+use crate::render::svg::{alpha, border_of, fx1, hex, text_el, trunc};
 use crate::render::texts::{date_lines, is_dead, name_lines, titles_of};
 use crate::render::theme::{
     COLOR_BACK_ELEMENT, COLOR_PARTNER, COLOR_RIBBON_BLACK, COLOR_RIBBON_WHITE, COLOR_TEXT,
     COLOR_TEXT_VEILED, Scale,
 };
+
+struct Geom {
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+}
+
+fn open_rect(s: &mut String, g: &Geom, rx: f32) {
+    s.push_str("<rect x=\"");
+    s.push_str(&fx1(g.x));
+    s.push_str("\" y=\"");
+    s.push_str(&fx1(g.y));
+    s.push_str("\" width=\"");
+    s.push_str(&fx1(g.w));
+    s.push_str("\" height=\"");
+    s.push_str(&fx1(g.h));
+    s.push_str("\" rx=\"");
+    s.push_str(&fx1(rx));
+    s.push('"');
+}
+
+fn card_rects(
+    s: &mut String,
+    g: &Geom,
+    bg_corner: f32,
+    corner: f32,
+    bg: [u8; 4],
+    border: [u8; 4],
+    bw: f32,
+) {
+    open_rect(s, g, bg_corner);
+    s.push_str(" fill=\"");
+    s.push_str(&hex(bg));
+    s.push('"');
+    s.push_str(&alpha(bg));
+    s.push_str("/>\n");
+    open_rect(s, g, corner);
+    s.push_str(" fill=\"none\" stroke=\"");
+    s.push_str(&hex(border));
+    s.push_str("\" stroke-width=\"");
+    s.push_str(&fx1(bw));
+    s.push_str("\"/>\n");
+}
 
 pub(crate) fn draw_cards(
     s: &mut String,
@@ -29,18 +73,8 @@ pub(crate) fn draw_cards(
         } else {
             COLOR_BACK_ELEMENT
         };
-        s.push_str(&format!(
-            "<rect x=\"{x:.1}\" y=\"{y:.1}\" width=\"{w:.1}\" height=\"{h:.1}\" rx=\"{:.1}\" fill=\"{}\"{}/>\n",
-            sc.bg_corner,
-            hex(bg),
-            alpha(bg)
-        ));
-        s.push_str(&format!(
-            "<rect x=\"{x:.1}\" y=\"{y:.1}\" width=\"{w:.1}\" height=\"{h:.1}\" rx=\"{:.1}\" fill=\"none\" stroke=\"{}\" stroke-width=\"{:.1}\"/>\n",
-            sc.corner,
-            hex(border),
-            sc.border
-        ));
+        let g = Geom { x, y, w, h };
+        card_rects(s, &g, sc.bg_corner, sc.corner, bg, border, sc.border);
         if p.base.mini {
             let txt = if p.amount > 100 {
                 "100+".to_string()

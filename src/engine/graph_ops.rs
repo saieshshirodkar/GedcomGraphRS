@@ -37,8 +37,16 @@ impl Graph {
         if mini {
             return;
         }
-        let existing: Vec<u32> = self.registered_persons();
-        for q in existing {
+        let by_person: Vec<u32> = self
+            .anim
+            .dup_by_person
+            .get(&person)
+            .cloned()
+            .unwrap_or_default();
+        let by_genfam: Vec<u32> = spouse_family
+            .and_then(|sf| self.anim.dup_by_genfam.get(&(generation, sf)).cloned())
+            .unwrap_or_default();
+        for q in by_person.into_iter().chain(by_genfam) {
             let (omini, operson, ogen) = self
                 .anim
                 .persons
@@ -63,24 +71,14 @@ impl Graph {
                     let line = DupLine::of(&self.gedcom, q, pid, &self.anim.persons);
                     self.anim.duplicate_lines.push(line);
                 }
-            } else if ogen == generation {
-                if let (Some(a), Some(b)) = (self.old_family_of(q), spouse_family) {
-                    if a == b {
-                        if let Some(p) = self.anim.persons.get_mut(pid as usize) {
-                            p.duplicate = true;
-                        }
-                    }
-                }
+            } else if ogen == generation
+                && let (Some(a), Some(b)) = (self.old_family_of(q), spouse_family)
+                && a == b
+                && let Some(p) = self.anim.persons.get_mut(pid as usize)
+            {
+                p.duplicate = true;
             }
         }
-    }
-
-    fn registered_persons(&self) -> Vec<u32> {
-        let mut out: Vec<u32> = Vec::new();
-        for nid in self.anim.nodes.clone() {
-            out.extend(self.anim.node_persons(nid));
-        }
-        out
     }
 
     fn old_family_of(&self, pid: u32) -> Option<u32> {

@@ -81,22 +81,20 @@ const DIRS: &[&str] = &[
     "/usr/share/fonts/TTF/DejaVu",
 ];
 
-fn stem_of(p: &Path) -> Option<String> {
-    let s = p.file_stem()?.to_str()?;
-    Some(s.to_ascii_lowercase())
-}
-
-fn wanted(p: &Path, stems: &[&str]) -> bool {
-    let ext = p
-        .extension()
-        .and_then(|e| e.to_str())
-        .map(|e| e.to_ascii_lowercase());
-    let Some(ext) = ext else { return false };
+fn wanted(name: &std::ffi::OsStr, stems: &[&str]) -> bool {
+    let Some(raw) = name.to_str() else {
+        return false;
+    };
+    let mut parts = raw.rsplitn(2, '.');
+    let ext = parts.next().unwrap_or_default().to_ascii_lowercase();
     if !EXTS.contains(&ext.as_str()) {
         return false;
     }
-    let Some(stem) = stem_of(p) else { return false };
-    stems.iter().any(|w| w.eq_ignore_ascii_case(&stem))
+    let stem = match parts.next() {
+        Some(s) => s.rsplit_once('.').map_or(s, |(a, _)| a),
+        None => raw,
+    };
+    stems.iter().any(|w| w.eq_ignore_ascii_case(stem))
 }
 
 fn collect(dir: &Path, stems: &[&str], out: &mut Vec<PathBuf>, budget: &mut usize, depth: usize) {
@@ -106,17 +104,21 @@ fn collect(dir: &Path, stems: &[&str], out: &mut Vec<PathBuf>, budget: &mut usiz
     let Ok(rd) = std::fs::read_dir(dir) else {
         return;
     };
+    let mut subdirs: Vec<PathBuf> = Vec::new();
     for e in rd.flatten() {
         if *budget == 0 {
             return;
         }
-        let p = e.path();
-        if p.is_dir() {
-            collect(&p, stems, out, budget, depth + 1);
-        } else if wanted(&p, stems) {
-            out.push(p);
+        let Ok(ft) = e.file_type() else { continue };
+        if ft.is_dir() {
+            subdirs.push(e.path());
+        } else if wanted(&e.file_name(), stems) {
+            out.push(e.path());
             *budget -= 1;
         }
+    }
+    for d in subdirs {
+        collect(&d, stems, out, budget, depth + 1);
     }
 }
 
@@ -231,13 +233,13 @@ mod tests {
 
     #[test]
     fn stem_matching_is_case_and_ext_aware() {
-        let p = Path::new("/usr/share/fonts/TTF/DejaVuSans.ttf");
+        let p = std::ffi::OsStr::new("DejaVuSans.ttf");
         assert!(wanted(p, REGULAR_STEMS));
         assert!(!wanted(p, BOLD_STEMS));
-        let b = Path::new("/x/DejaVuSans-Bold.TTF");
+        let b = std::ffi::OsStr::new("DejaVuSans-Bold.TTF");
         assert!(wanted(b, BOLD_STEMS));
-        assert!(!wanted(Path::new("/x/notes.txt"), REGULAR_STEMS));
-        assert!(!wanted(Path::new("/x/noext"), REGULAR_STEMS));
+        assert!(!wanted(std::ffi::OsStr::new("notes.txt"), REGULAR_STEMS));
+        assert!(!wanted(std::ffi::OsStr::new("noext"), REGULAR_STEMS));
     }
 
     #[test]
