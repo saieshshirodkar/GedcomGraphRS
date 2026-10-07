@@ -114,3 +114,34 @@ pub fn gedcom_of(graph: &Graph, pid: u32) -> PersonId {
         .map(|p| PersonId(p.person))
         .unwrap_or(PersonId(u32::MAX))
 }
+
+fn fixture() -> (GedcomData, PersonId) {
+    let mut b = Builder::create();
+    let dad = b.person("I1", "Dad /Test/", Some("M"), false);
+    let mum = b.person("I2", "Mum /Test/", Some("F"), false);
+    let kid = b.person("I3", "Kid /Test/", Some("M"), false);
+    b.family("F1", Some(dad), Some(mum), &[kid], Some("1990"));
+    (b.finish(), kid)
+}
+
+#[test]
+fn helpers_behave() {
+    let (ged, kid) = fixture();
+    let mut g = Graph::with_gedcom(ged);
+    run(&mut g, kid);
+    assert!(all_finite(&g));
+    assert!(node_finite(&g, gedcomgraph::core::NodeId::Person(0)));
+    assert!(finite(g.width()));
+
+    let mut h = Graph::with_gedcom(fixture().0);
+    run_sized(&mut h, kid, 90.0, 30.0);
+    assert_eq!(h.anim.persons[0].base.w, 90.0);
+    assert_eq!(h.anim.persons[0].base.h, 30.0);
+    assert_eq!(gedcom_of(&h, 0), PersonId(0));
+    assert!(
+        person_generation(&h, 0) < 0,
+        "anim index 0 is the parent family, one generation up"
+    );
+    assert_eq!(person_generation(&h, 9999), 999);
+    assert_eq!(gedcom_of(&h, 9999), PersonId(u32::MAX));
+}

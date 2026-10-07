@@ -19,10 +19,11 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+overflow-checks = true
 strip = true
 
 [lints.rust]
-unsafe_code = "warn"
+unsafe_code = "deny"
 
 [lints.clippy]
 all = "warn"

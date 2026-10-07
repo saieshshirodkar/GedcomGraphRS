@@ -58,26 +58,13 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     "FAMC" => {
                         let fid = strip_ats(&kid.value);
                         if let Some(fi) = family_ids.get(fid).copied() {
-                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
-                                if !p.parent_fams.contains(&fi) {
-                                    p.parent_fams.push(fi);
-                                }
-                            }
-                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
-                                if !f.children.contains(&pi) {
-                                    f.children.push(pi);
-                                }
-                            }
+                            ged.link_child(fi, pi);
                         }
                     }
                     "FAMS" => {
                         let fid = strip_ats(&kid.value);
                         if let Some(fi) = family_ids.get(fid).copied() {
-                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
-                                if !p.spouse_fams.contains(&fi) {
-                                    p.spouse_fams.push(fi);
-                                }
-                            }
+                            ged.link_spouse(fi, pi);
                         }
                     }
                     _ => {
@@ -115,11 +102,7 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                                     f.husbands.push(pi);
                                 }
                             }
-                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
-                                if !p.spouse_fams.contains(&fi) {
-                                    p.spouse_fams.push(fi);
-                                }
-                            }
+                            ged.link_spouse(fi, pi);
                         }
                     }
                     "WIFE" => {
@@ -130,26 +113,13 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                                     f.wives.push(pi);
                                 }
                             }
-                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
-                                if !p.spouse_fams.contains(&fi) {
-                                    p.spouse_fams.push(fi);
-                                }
-                            }
+                            ged.link_spouse(fi, pi);
                         }
                     }
                     "CHIL" => {
                         let pid = strip_ats(&kid.value);
                         if let Some(pi) = person_ids.get(pid).copied() {
-                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
-                                if !f.children.contains(&pi) {
-                                    f.children.push(pi);
-                                }
-                            }
-                            if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
-                                if !p.parent_fams.contains(&fi) {
-                                    p.parent_fams.push(fi);
-                                }
-                            }
+                            ged.link_child(fi, pi);
                         }
                     }
                     _ => {

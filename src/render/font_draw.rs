@@ -1,4 +1,5 @@
 use crate::render::font_file::Font;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Style {
@@ -14,17 +15,128 @@ pub struct Fonts {
     pub fallback: Option<Font>,
 }
 
-fn try_load(names: &[&str]) -> Option<Font> {
-    for dir in [
-        "/usr/share/fonts/TTF",
-        "/usr/share/fonts/liberation",
-        "/usr/share/fonts/noto",
-    ] {
-        for n in names {
-            let p = format!("{dir}/{n}");
-            if let Some(f) = Font::load(&p) {
-                return Some(f);
-            }
+const REGULAR_STEMS: &[&str] = &[
+    "DejaVuSans",
+    "LiberationSans-Regular",
+    "NotoSans-Regular",
+    "FreeSans",
+    "Roboto-Regular",
+    "NotoSans",
+    "Arial",
+    "ArialMT",
+    "Helvetica",
+    "Verdana",
+    "Tahoma",
+];
+
+const BOLD_STEMS: &[&str] = &[
+    "DejaVuSans-Bold",
+    "LiberationSans-Bold",
+    "NotoSans-Bold",
+    "FreeSansBold",
+    "Roboto-Bold",
+    "Arial-Bold",
+    "Arial_Bold",
+    "Arial-BoldMT",
+    "Helvetica-Bold",
+    "Verdana-Bold",
+];
+
+const ITALIC_STEMS: &[&str] = &[
+    "DejaVuSans-Oblique",
+    "LiberationSans-Italic",
+    "NotoSans-Italic",
+    "FreeSansOblique",
+    "Roboto-Italic",
+    "Arial-Italic",
+    "Arial_Italic",
+    "Verdana-Italic",
+];
+
+const EXTS: &[&str] = &["ttf", "ttc", "otf", "pfb"];
+
+const SCAN_BUDGET: usize = 4000;
+const MAX_DEPTH: usize = 4;
+
+#[cfg(target_os = "macos")]
+const DIRS: &[&str] = &[
+    "/System/Library/Fonts",
+    "/System/Library/Fonts/Supplemental",
+    "/Library/Fonts",
+    "/System/Library/AssetsV2/com_apple_MobileAsset_Font7",
+];
+
+#[cfg(target_os = "windows")]
+const DIRS: &[&str] = &["C:\\Windows\\Fonts", "C:\\Windows\\Fonts\\truetype"];
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+const DIRS: &[&str] = &[
+    "/usr/share/fonts",
+    "/usr/local/share/fonts",
+    "/usr/share/fonts/TTF",
+    "/usr/share/fonts/liberation",
+    "/usr/share/fonts/liberation2",
+    "/usr/share/fonts/noto",
+    "/usr/share/fonts/dejavu",
+    "/usr/share/fonts/TTF/DejaVu",
+];
+
+fn stem_of(p: &Path) -> Option<String> {
+    let s = p.file_stem()?.to_str()?;
+    Some(s.to_ascii_lowercase())
+}
+
+fn wanted(p: &Path, stems: &[&str]) -> bool {
+    let ext = p
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase());
+    let Some(ext) = ext else { return false };
+    if !EXTS.contains(&ext.as_str()) {
+        return false;
+    }
+    let Some(stem) = stem_of(p) else { return false };
+    stems.iter().any(|w| w.eq_ignore_ascii_case(&stem))
+}
+
+fn collect(dir: &Path, stems: &[&str], out: &mut Vec<PathBuf>, budget: &mut usize, depth: usize) {
+    if *budget == 0 || depth > MAX_DEPTH {
+        return;
+    }
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for e in rd.flatten() {
+        if *budget == 0 {
+            return;
+        }
+        let p = e.path();
+        if p.is_dir() {
+            collect(&p, stems, out, budget, depth + 1);
+        } else if wanted(&p, stems) {
+            out.push(p);
+            *budget -= 1;
+        }
+    }
+}
+
+fn candidates(stems: &[&str]) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = Vec::new();
+    let mut budget = SCAN_BUDGET;
+    for d in DIRS {
+        collect(Path::new(d), stems, &mut out, &mut budget, 0);
+        if out.len() >= 6 {
+            break;
+        }
+    }
+    out
+}
+
+fn try_load(stems: &[&str]) -> Option<Font> {
+    for p in candidates(stems) {
+        let Some(name) = p.to_str() else { continue };
+        if let Some(f) = Font::load(name) {
+            return Some(f);
         }
     }
     Option::None
@@ -32,24 +144,26 @@ fn try_load(names: &[&str]) -> Option<Font> {
 
 impl Fonts {
     pub fn load() -> Fonts {
+        let regular = try_load(REGULAR_STEMS);
         Fonts {
-            regular: try_load(&[
-                "DejaVuSans.ttf",
-                "LiberationSans-Regular.ttf",
-                "NotoSans-Regular.ttf",
-            ]),
-            bold: try_load(&[
-                "DejaVuSans-Bold.ttf",
-                "LiberationSans-Bold.ttf",
-                "NotoSans-Bold.ttf",
-            ]),
-            italic: try_load(&[
-                "DejaVuSans-Oblique.ttf",
-                "LiberationSans-Italic.ttf",
-                "NotoSans-Italic.ttf",
-            ]),
-            fallback: try_load(&["DejaVuSans.ttf", "NotoSans-Regular.ttf"]),
+            bold: try_load(BOLD_STEMS).or_else(|| regular.clone()),
+            italic: try_load(ITALIC_STEMS).or_else(|| regular.clone()),
+            fallback: regular.clone(),
+            regular,
         }
+    }
+
+    pub fn empty() -> Fonts {
+        Fonts {
+            regular: Option::None,
+            bold: Option::None,
+            italic: Option::None,
+            fallback: Option::None,
+        }
+    }
+
+    pub fn is_usable(&self) -> bool {
+        self.regular.is_some()
     }
 
     fn face(&self, style: Style) -> Option<&Font> {
@@ -73,10 +187,7 @@ impl Fonts {
                 return Some((f, g));
             }
         }
-        if let Some(f) = self.regular.as_ref() {
-            return Some((f, 0));
-        }
-        Option::None
+        self.regular.as_ref().map(|f| (f, 0))
     }
 
     pub fn measure(&self, text: &str, px: f32, style: Style) -> f32 {
@@ -94,18 +205,10 @@ impl Fonts {
 mod tests {
     use super::*;
 
-    fn empty() -> Fonts {
-        Fonts {
-            regular: Option::None,
-            bold: Option::None,
-            italic: Option::None,
-            fallback: Option::None,
-        }
-    }
-
     #[test]
     fn empty_fonts_measure_zero() {
-        let f = empty();
+        let f = Fonts::empty();
+        assert!(!f.is_usable());
         assert_eq!(f.measure("Hello", 68.0, Style::Bold), 0.0);
         assert_eq!(f.measure("", 68.0, Style::Regular), 0.0);
         assert_eq!(f.measure("Hi", 56.0, Style::Italic), 0.0);
@@ -114,7 +217,7 @@ mod tests {
     #[test]
     fn loaded_fonts_measure_positive() {
         let f = Fonts::load();
-        if f.regular.is_none() {
+        if !f.is_usable() {
             return;
         }
         assert!(f.measure("Ag", 68.0, Style::Regular) > 0.0);
@@ -124,5 +227,33 @@ mod tests {
             f.measure("A longer line", 56.0, Style::Regular)
                 > f.measure("Ag", 56.0, Style::Regular)
         );
+    }
+
+    #[test]
+    fn stem_matching_is_case_and_ext_aware() {
+        let p = Path::new("/usr/share/fonts/TTF/DejaVuSans.ttf");
+        assert!(wanted(p, REGULAR_STEMS));
+        assert!(!wanted(p, BOLD_STEMS));
+        let b = Path::new("/x/DejaVuSans-Bold.TTF");
+        assert!(wanted(b, BOLD_STEMS));
+        assert!(!wanted(Path::new("/x/notes.txt"), REGULAR_STEMS));
+        assert!(!wanted(Path::new("/x/noext"), REGULAR_STEMS));
+    }
+
+    #[test]
+    fn candidates_find_something_or_none_without_panic() {
+        let c = candidates(REGULAR_STEMS);
+        assert!(c.len() < SCAN_BUDGET + 1);
+    }
+
+    #[test]
+    fn fallback_covers_missing_styles() {
+        let f = Fonts::load();
+        if !f.is_usable() {
+            return;
+        }
+        assert!(f.bold.is_some());
+        assert!(f.italic.is_some());
+        assert!(f.fallback.is_some());
     }
 }

@@ -12,7 +12,7 @@ A render runs five stages in order. The order matters because each stage feeds t
 
 ## Identity by index
 
-The TypeScript original links objects with references. Cycles everywhere: nodes point at groups, groups point back at nodes, lines point at both. Rust cannot borrow that graph directly, so this port stores everything in vectors and links by `u32` index.
+The original links objects with references. Cycles everywhere: nodes point at groups, groups point back at nodes, lines point at both. Rust cannot borrow that graph directly, so this port stores everything in vectors and links by `u32` index.
 
 - `NodeId` is either `Person(u32)` or `Family(u32)`.
 - `Animator` owns the vectors: persons, families, groups, unions, lines.
@@ -32,5 +32,7 @@ The TypeScript original links objects with references. Cycles everywhere: nodes 
 | `lines`   | curve, vertical, horizontal, next, back, and duplicate connectors |
 | `engine`  | `Graph` facade and node factories, tree walker, animator init and placement |
 | `render`  | TrueType loading, text measurement, SVG output |
+
+Font parsing is split by topic: `font_read` holds the bounds-checked primitive readers and the sfnt directory walk, `font_cmap` holds cmap format 4 and 12, `font_file` holds the `Font` type and table accessors, `font_simple` holds glyph outline decoding, and `font_draw` holds platform font discovery plus text measurement. Every offset that comes from the file is range-checked before use, so a corrupt font is rejected instead of panicking.
 
 Files stay near 100 to 200 lines. When a module outgrows that, its `impl` blocks move to a sibling file by topic, which is why `engine` and `layout` have several files. Behavior that needs many pieces of `Animator` state lives in `impl Animator` blocks inside the relevant module file rather than in one giant file.

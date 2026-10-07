@@ -1,4 +1,4 @@
-use super::gedcom::{FamilyId, GFamily, GPerson, GedcomData, PersonId, essence};
+use super::gedcom::{FamilyId, GFamily, GPerson, GedcomData, PersonId};
 
 impl GedcomData {
     pub fn empty() -> GedcomData {
@@ -34,47 +34,17 @@ impl GedcomData {
     }
 
     pub fn find_person(&self, id: &str) -> Option<PersonId> {
-        let mut lo = 0usize;
-        let mut hi = self.person_order.len();
-        while lo < hi {
-            let mid = lo + (hi - lo) / 2;
-            let idx = self.person_order[mid] as usize;
-            let cur = self
-                .persons
-                .get(idx)
-                .map(|p| p.id.as_str())
-                .unwrap_or_default();
-            if cur == id {
-                return u32::try_from(idx).ok().map(PersonId);
-            } else if cur < id {
-                lo = mid + 1;
-            } else {
-                hi = mid;
-            }
-        }
-        Option::None
+        let idx = search(&self.person_order, id, |i| {
+            Some(self.persons.get(i)?.id.as_str())
+        })?;
+        u32::try_from(idx).ok().map(PersonId)
     }
 
     pub fn find_family(&self, id: &str) -> Option<FamilyId> {
-        let mut lo = 0usize;
-        let mut hi = self.family_order.len();
-        while lo < hi {
-            let mid = lo + (hi - lo) / 2;
-            let idx = self.family_order[mid] as usize;
-            let cur = self
-                .families
-                .get(idx)
-                .map(|f| f.id.as_str())
-                .unwrap_or_default();
-            if cur == id {
-                return u32::try_from(idx).ok().map(FamilyId);
-            } else if cur < id {
-                lo = mid + 1;
-            } else {
-                hi = mid;
-            }
-        }
-        Option::None
+        let idx = search(&self.family_order, id, |i| {
+            Some(self.families.get(i)?.id.as_str())
+        })?;
+        u32::try_from(idx).ok().map(FamilyId)
     }
 
     pub fn person(&self, idx: u32) -> Option<&GPerson> {
@@ -96,12 +66,14 @@ impl GedcomData {
     pub fn push_person(&mut self, person: GPerson) -> PersonId {
         let idx = PersonId(u32::try_from(self.persons.len()).unwrap_or(u32::MAX));
         self.persons.push(person);
+        self.person_order.clear();
         idx
     }
 
     pub fn push_family(&mut self, family: GFamily) -> FamilyId {
         let idx = FamilyId(u32::try_from(self.families.len()).unwrap_or(u32::MAX));
         self.families.push(family);
+        self.family_order.clear();
         idx
     }
 
@@ -132,6 +104,27 @@ impl GedcomData {
         }
     }
 
+    pub fn link_spouse(&mut self, family: FamilyId, person: PersonId) {
+        if let Some(p) = self.persons.get_mut(usize::from(person)) {
+            if !p.spouse_fams.contains(&family) {
+                p.spouse_fams.push(family);
+            }
+        }
+    }
+
+    pub fn link_child(&mut self, family: FamilyId, child: PersonId) {
+        if let Some(p) = self.persons.get_mut(usize::from(child)) {
+            if !p.parent_fams.contains(&family) {
+                p.parent_fams.push(family);
+            }
+        }
+        if let Some(f) = self.families.get_mut(usize::from(family)) {
+            if !f.children.contains(&child) {
+                f.children.push(child);
+            }
+        }
+    }
+
     pub fn link_children(&mut self, family: FamilyId, children: &[PersonId]) {
         for c in children {
             if let Some(p) = self.persons.get_mut(usize::from(*c)) {
@@ -149,6 +142,24 @@ impl GedcomData {
     }
 }
 
+fn search<'a>(order: &[u32], id: &str, key: impl Fn(usize) -> Option<&'a str>) -> Option<usize> {
+    let mut lo = 0usize;
+    let mut hi = order.len();
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        let idx = order[mid] as usize;
+        let cur = key(idx)?;
+        if cur == id {
+            return Some(idx);
+        } else if cur < id {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    Option::None
+}
+
 fn birth_year(p: &GPerson) -> Option<i32> {
     p.facts
         .iter()
@@ -164,15 +175,15 @@ fn birth_year(p: &GPerson) -> Option<i32> {
         })
 }
 
-fn kid_key(ged: &GedcomData, person: PersonId) -> (bool, i32, String) {
-    let name = essence(ged, Some(person.0));
-    if let Some(p) = ged.persons.get(usize::from(person)) {
-        match birth_year(p) {
-            Some(y) => (false, y, name),
-            Option::None => (true, i32::MAX, name),
-        }
-    } else {
-        (true, i32::MAX, name)
+fn kid_key(ged: &GedcomData, person: PersonId) -> (bool, i32, &str) {
+    let name = ged
+        .person(person.0)
+        .and_then(|p| p.names.first())
+        .map(|n| n.display.as_str());
+    let name = name.unwrap_or("");
+    match ged.persons.get(usize::from(person)).and_then(birth_year) {
+        Some(y) => (false, y, name),
+        Option::None => (true, i32::MAX, name),
     }
 }
 

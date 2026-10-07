@@ -81,10 +81,6 @@ impl PersonNodeData {
             txt.trim().to_string()
         }
     }
-
-    pub fn main_self(&self) -> bool {
-        !self.half_sibling
-    }
 }
 
 #[cfg(test)]
@@ -134,8 +130,8 @@ mod tests {
         p.base.mini = true;
         p.amount = 7;
         assert_eq!(p.label("Ann"), "7 (Ann)");
-        assert!(p.main_self());
+        assert!(!p.half_sibling);
         p.half_sibling = true;
-        assert!(!p.main_self());
+        assert!(p.half_sibling);
     }
 }

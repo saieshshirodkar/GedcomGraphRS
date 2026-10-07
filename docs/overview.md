@@ -1,6 +1,6 @@
 # gedcomgraph
 
-A family tree layout engine in Rust, ported 1:1 from a TypeScript project. You give it a GEDCOM file and a starting person. It figures out which relatives to show, lays them out in generations, and writes an SVG that looks like the FamilyGem dark theme.
+A family tree layout engine in Rust, ported from an original Java implementation by way of a TypeScript version. You give it a GEDCOM file and a starting person. It figures out which relatives to show, lays them out in generations, and writes an SVG that looks like the FamilyGem dark theme.
 
 There are no dependencies. The standard library is all it uses.
 

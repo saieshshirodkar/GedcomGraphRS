@@ -59,10 +59,6 @@ impl LineSeg {
         self.x1.max(self.x2)
     }
 
-    pub fn span(&self) -> f32 {
-        self.right() - self.left()
-    }
-
     pub fn compare(&self, other: &LineSeg) -> std::cmp::Ordering {
         debug_assert!(self.left().is_finite() && other.left().is_finite());
         self.left()
@@ -143,7 +139,7 @@ mod tests {
         };
         assert_eq!(a.compare(&b), std::cmp::Ordering::Greater);
         assert_eq!(a.left(), 5.0);
-        assert_eq!(a.span(), 4.0);
+        assert_eq!(a.right() - a.left(), 4.0);
     }
 
     #[test]

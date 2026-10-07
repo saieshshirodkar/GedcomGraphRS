@@ -13,6 +13,8 @@ impl Animator {
     ) {
         self.fulcrum_group = fulcrum_group;
         self.max_above = max_above;
+        self.bond_owners.clear();
+        self.unions.clear();
         self.width = 0.0;
         self.height = 0.0;
         self.biggest_path_size = 0.0;
@@ -187,7 +189,9 @@ impl Animator {
                 }
             }
         }
-        self.nodes.retain(|n| !drop_nodes.contains(n));
-        self.bond_owners.retain(|b| !drop_bonds.contains(b));
+        let doomed_nodes: std::collections::HashSet<NodeId> = drop_nodes.iter().copied().collect();
+        let doomed_bonds: std::collections::HashSet<u32> = drop_bonds.iter().copied().collect();
+        self.nodes.retain(|n| !doomed_nodes.contains(n));
+        self.bond_owners.retain(|b| !doomed_bonds.contains(b));
     }
 }

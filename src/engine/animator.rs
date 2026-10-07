@@ -72,6 +72,9 @@ impl Animator {
         self.group_seq.clear();
         self.group_rows.clear();
         self.union_rows.clear();
+        self.unions.clear();
+        self.line_rows.clear();
+        self.back_rows.clear();
         self.width = 0.0;
         self.height = 0.0;
         self.biggest_path_size = 0.0;

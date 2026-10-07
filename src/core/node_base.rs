@@ -28,34 +28,6 @@ pub struct NodeBase {
     pub spouse_family: Option<u32>,
 }
 
-impl NodeId {
-    pub fn is_person(self) -> bool {
-        matches!(self, NodeId::Person(_))
-    }
-
-    pub fn is_family(self) -> bool {
-        matches!(self, NodeId::Family(_))
-    }
-
-    pub fn person_index(self) -> Option<u32> {
-        match self {
-            NodeId::Person(i) => Some(i),
-            NodeId::Family(_) => Option::None,
-        }
-    }
-
-    pub fn family_index(self) -> Option<u32> {
-        match self {
-            NodeId::Family(i) => Some(i),
-            NodeId::Person(_) => Option::None,
-        }
-    }
-
-    pub fn same_slot(self, other: NodeId) -> bool {
-        self == other
-    }
-}
-
 impl NodeBase {
     pub fn of_generation(generation: i32) -> NodeBase {
         NodeBase {
@@ -88,66 +60,14 @@ impl NodeBase {
         self.x += dx;
     }
 
-    pub fn grow(&mut self, dw: f32, dh: f32) {
-        self.w += dw;
-        self.h += dh;
-    }
-
     pub fn has_finite_rect(&self) -> bool {
         self.x.is_finite() && self.y.is_finite() && self.w.is_finite() && self.h.is_finite()
-    }
-
-    pub fn link_next(&mut self, next: Option<NodeId>) {
-        self.next = next;
-    }
-
-    pub fn link_prev(&mut self, prev: Option<NodeId>) {
-        self.prev = prev;
-    }
-
-    pub fn attach_union(&mut self, union: Option<u32>) {
-        self.union = union;
-    }
-
-    pub fn attach_group(&mut self, group: Option<u32>) {
-        self.group = group;
-    }
-
-    pub fn attach_youth(&mut self, youth: Option<u32>) {
-        self.youth = youth;
-    }
-
-    pub fn push_origin(&mut self, origin: NodeId) {
-        let list = self.origins.get_or_insert_with(Vec::new);
-        if !list.contains(&origin) {
-            list.push(origin);
-        }
-    }
-
-    pub fn clear_links(&mut self) {
-        self.prev = Option::None;
-        self.next = Option::None;
-        self.union = Option::None;
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn id_kinds() {
-        let p = NodeId::Person(3);
-        let f = NodeId::Family(5);
-        assert!(p.is_person());
-        assert!(!p.is_family());
-        assert!(f.is_family());
-        assert_eq!(p.person_index(), Some(3));
-        assert_eq!(p.family_index(), Option::None);
-        assert_eq!(f.family_index(), Some(5));
-        assert!(p.same_slot(NodeId::Person(3)));
-        assert!(!p.same_slot(f));
-    }
 
     #[test]
     fn base_geometry() {
@@ -158,26 +78,7 @@ mod tests {
         assert_eq!(b.right(), 30.0);
         b.shift(5.0);
         assert_eq!(b.x, 15.0);
-        b.grow(2.0, 4.0);
-        assert_eq!((b.w, b.h), (22.0, 4.0));
         assert!(b.has_finite_rect());
-    }
-
-    #[test]
-    fn links_and_unions() {
-        let mut b = NodeBase::default();
-        b.link_next(Some(NodeId::Person(1)));
-        b.link_prev(Some(NodeId::Family(2)));
-        b.attach_union(Some(7));
-        b.attach_group(Some(8));
-        b.attach_youth(Option::None);
-        assert_eq!(b.next, Some(NodeId::Person(1)));
-        b.push_origin(NodeId::Person(1));
-        b.push_origin(NodeId::Person(1));
-        assert_eq!(b.origins.as_ref().map(|v| v.len()), Some(1));
-        b.clear_links();
-        assert_eq!(b.next, Option::None);
-        assert_eq!(b.union, Option::None);
     }
 
     #[test]

@@ -1,5 +1,7 @@
+pub mod font_cmap;
 pub mod font_draw;
 pub mod font_file;
+pub mod font_read;
 pub mod font_simple;
 pub mod measure;
 pub mod svg;

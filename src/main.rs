@@ -54,7 +54,7 @@ fn pick_fulcrum(ged: &GedcomData, wanted: Option<&str>) -> u32 {
     fallback.unwrap_or(0)
 }
 
-fn print_tree(graph: &Graph, ged: &GedcomData) {
+fn print_tree(graph: &Graph) {
     println!("width {:.1} height {:.1}", graph.width(), graph.height());
     println!(
         "nodes {} persons {} bonds {}",
@@ -69,10 +69,10 @@ fn print_tree(graph: &Graph, ged: &GedcomData) {
         graph.duplicate_line_count()
     );
     let mut order: Vec<(i32, f32, String)> = Vec::new();
-    for n in graph.anim.nodes.clone() {
-        let generation = graph.node_generation(n);
-        let x = graph.node_x(n);
-        order.push((generation, x, graph.node_label(n)));
+    for n in &graph.anim.nodes {
+        let generation = graph.node_generation(*n);
+        let x = graph.node_x(*n);
+        order.push((generation, x, graph.node_label(*n)));
     }
     order.sort_by(|a, b| {
         debug_assert!(a.1.is_finite() && b.1.is_finite());
@@ -82,7 +82,6 @@ fn print_tree(graph: &Graph, ged: &GedcomData) {
     for (generation, x, label) in order {
         println!("generation {generation:>3} x {x:>8.1}  {label}");
     }
-    let _ = ged;
 }
 
 fn render_file(path: &str, out: &str, scale: f32, person: Option<&str>) -> Result<(), AppError> {
@@ -96,7 +95,7 @@ fn render_file(path: &str, out: &str, scale: f32, person: Option<&str>) -> Resul
     }
     let sc = Scale::of(scale);
     let fulcrum = pick_fulcrum(&ged, person);
-    let mut graph = Graph::with_gedcom(ged.clone());
+    let mut graph = Graph::with_gedcom(ged);
     graph
         .max_ancestors(10)
         .max_great_uncles(10)
@@ -157,17 +156,18 @@ fn run() -> Result<(), AppError> {
         return Err(AppError::Empty(path.to_string()));
     }
     let fulcrum = pick_fulcrum(&ged, args.get(2).map(|s| s.as_str()));
-    let mut graph = Graph::with_gedcom(ged.clone());
+    let fulcrum_label = ged
+        .person(fulcrum)
+        .map(|p| p.id.clone())
+        .unwrap_or_else(|| "?".to_string());
+    let mut graph = Graph::with_gedcom(ged);
     graph.set_max_bitmap_size(2000.0);
     graph.start_from(fulcrum);
     graph.init_nodes();
     graph.place_nodes();
     println!("file {path}");
-    println!(
-        "fulcrum {}",
-        ged.person(fulcrum).map(|p| p.id.as_str()).unwrap_or("?")
-    );
-    print_tree(&graph, &ged);
+    println!("fulcrum {fulcrum_label}");
+    print_tree(&graph);
     Ok(())
 }
 

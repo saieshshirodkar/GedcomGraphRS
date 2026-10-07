@@ -4,10 +4,10 @@ use crate::lines::segments::LineSeg;
 
 impl Animator {
     pub(crate) fn normalize_origin(&mut self) {
-        let mut min_x = f32::MAX;
-        let mut min_y = f32::MAX;
-        let mut max_x = f32::MIN;
-        let mut max_y = f32::MIN;
+        let mut min_x = f32::INFINITY;
+        let mut min_y = f32::INFINITY;
+        let mut max_x = f32::NEG_INFINITY;
+        let mut max_y = f32::NEG_INFINITY;
         for n in self.nodes.clone() {
             let (x, y, w, h) = (
                 self.node_x(n),
@@ -28,7 +28,7 @@ impl Animator {
                 max_y = y + h;
             }
         }
-        if min_x == f32::MAX {
+        if min_x == f32::INFINITY {
             self.width = 0.0;
             self.height = 0.0;
             return;

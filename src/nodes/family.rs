@@ -107,14 +107,6 @@ impl FamilyNodeData {
         }
     }
 
-    pub fn has_children_flag(&self) -> bool {
-        if self.base.mini {
-            true
-        } else {
-            self.base.youth.is_some()
-        }
-    }
-
     pub fn describe(&self, parts: &[String]) -> String {
         let mut s = String::from("{");
         for (i, p) in parts.iter().enumerate() {
@@ -177,9 +169,9 @@ mod tests {
     #[test]
     fn children_and_centers() {
         let f = FamilyNodeData::of(2, false, Side::Left, true, 1);
-        assert!(!f.has_children_flag());
         let m = FamilyNodeData::of(2, true, Side::None, false, 1);
-        assert!(m.has_children_flag());
+        assert!(!f.base.youth.is_some());
+        assert!(m.base.mini);
         assert_eq!(f.simple_center_x(), f.base.x + f.base.w / 2.0);
         assert_eq!(f.describe(&["a".to_string(), "b".to_string()]), "{a, b}");
         assert_eq!(

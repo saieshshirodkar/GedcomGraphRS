@@ -1,10 +1,17 @@
-use crate::config::{ANCESTRY_DISTANCE, HORIZONTAL_SPACE, UNION_DISTANCE};
+use crate::config::{ANCESTRY_DISTANCE, HORIZONTAL_SPACE, MAX_SLIDE_DEPTH, UNION_DISTANCE};
 use crate::core::node_base::NodeId;
 use crate::engine::animator::Animator;
 
 impl Animator {
     pub(crate) fn slide_node(&mut self, nid: NodeId, shift: f32) {
+        self.slide_node_at(nid, shift, 0);
+    }
+
+    fn slide_node_at(&mut self, nid: NodeId, shift: f32, depth: u32) {
         self.set_node_x(nid, self.node_x(nid) + shift);
+        if depth >= MAX_SLIDE_DEPTH {
+            return;
+        }
         if shift > 0.0 {
             if let Some(next) = self.node_next(nid) {
                 let same = self.node_union(nid) == self.node_union(next);
@@ -15,7 +22,7 @@ impl Animator {
                 };
                 let over = self.node_x(nid) + self.node_width(nid) + gap - self.node_x(next);
                 if over > 0.0 {
-                    self.slide_node(next, over);
+                    self.slide_node_at(next, over, depth + 1);
                 }
             }
         } else if shift < 0.0 {
@@ -28,7 +35,7 @@ impl Animator {
                 };
                 let over = self.node_x(prev) + self.node_width(prev) + gap - self.node_x(nid);
                 if over > 0.0 {
-                    self.slide_node(prev, -over);
+                    self.slide_node_at(prev, -over, depth + 1);
                 }
             }
         }

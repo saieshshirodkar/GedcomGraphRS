@@ -18,6 +18,8 @@ pub const PROGENY_PLAY: f32 = 12.0;
 pub const MINI_CARD_HEIGHT: f32 = 20.0;
 pub const SINGLETON_BONDLESS: f32 = 0.0;
 
+pub const MAX_SLIDE_DEPTH: u32 = 4096;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Spacing {
     pub vertical_calc: f32,
@@ -44,44 +46,6 @@ impl Spacing {
             }
         }
     }
-
-    pub fn vertical(&self) -> f32 {
-        self.vertical_calc
-    }
-
-    pub fn little(&self) -> f32 {
-        self.little_calc
-    }
-
-    pub fn refresh(&mut self, with_numbers: bool) {
-        let next = Spacing::numbered(with_numbers);
-        self.vertical_calc = next.vertical_calc;
-        self.little_calc = next.little_calc;
-    }
-
-    pub fn row_pitch(&self, upper_half: f32, lower_half: f32) -> f32 {
-        upper_half + self.vertical_calc + lower_half
-    }
-
-    pub fn ancestor_gap(&self, narrow: bool) -> f32 {
-        if narrow {
-            ANCESTRY_DISTANCE
-        } else {
-            self.little_calc
-        }
-    }
-
-    pub fn horizontal_gap(&self, same_union: bool) -> f32 {
-        if same_union {
-            HORIZONTAL_SPACE
-        } else {
-            UNION_DISTANCE
-        }
-    }
-
-    pub fn mini_slot(&self, width: f32) -> f32 {
-        width + PROGENY_PLAY
-    }
 }
 
 #[cfg(test)]
@@ -104,27 +68,6 @@ mod tests {
     }
 
     #[test]
-    fn refresh_toggles() {
-        let mut s = Spacing::default();
-        s.refresh(false);
-        assert_eq!(s.vertical(), VERTICAL_SPACE / 2.0);
-        s.refresh(true);
-        assert_eq!(s.vertical(), VERTICAL_SPACE);
-        assert_eq!(s.little(), LITTLE_GROUP_DISTANCE);
-    }
-
-    #[test]
-    fn pitch_and_gaps() {
-        let s = Spacing::default();
-        assert_eq!(s.row_pitch(10.0, 20.0), 10.0 + VERTICAL_SPACE + 20.0);
-        assert_eq!(s.ancestor_gap(true), ANCESTRY_DISTANCE);
-        assert_eq!(s.ancestor_gap(false), LITTLE_GROUP_DISTANCE);
-        assert_eq!(s.horizontal_gap(true), HORIZONTAL_SPACE);
-        assert_eq!(s.horizontal_gap(false), UNION_DISTANCE);
-        assert_eq!(s.mini_slot(30.0), 30.0 + PROGENY_PLAY);
-    }
-
-    #[test]
     fn constants_sane() {
         const { assert!(VERTICAL_SPACE > 0.0) }
         const { assert!(HORIZONTAL_SPACE > 0.0) }
@@ -132,5 +75,11 @@ mod tests {
         const { assert!(MARRIAGE_WIDTH > MARRIAGE_INNER_WIDTH) }
         const { assert!(BOND_WIDTH > MINI_BOND_WIDTH) }
         const { assert!(MINI_CARD_HEIGHT > 0.0) }
+    }
+
+    #[test]
+    fn slide_depth_cap_is_bounded() {
+        const { assert!(MAX_SLIDE_DEPTH > 0) }
+        const { assert!(MAX_SLIDE_DEPTH < u32::MAX) }
     }
 }
