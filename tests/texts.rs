@@ -12,6 +12,7 @@ mod tests {
             facts,
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         g.reindex();
         (g, p)

@@ -63,12 +63,20 @@ impl From<FamilyId> for usize {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct NamePiece {
+    pub tag: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct GPerson {
     pub id: String,
     pub names: Vec<Name>,
+    pub pieces: Vec<NamePiece>,
     pub facts: Vec<Fact>,
     pub parent_fams: Vec<FamilyId>,
     pub spouse_fams: Vec<FamilyId>,
+    pub restricted: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -78,12 +86,23 @@ pub struct GFamily {
     pub wives: Vec<PersonId>,
     pub children: Vec<PersonId>,
     pub facts: Vec<Fact>,
+    pub restricted: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Dialect {
+    #[default]
+    Unknown,
+    FiveFive,
+    Seven,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct GedcomData {
     pub persons: Vec<GPerson>,
     pub families: Vec<GFamily>,
+    pub version: String,
+    pub dialect: Dialect,
     pub(crate) person_order: Vec<u32>,
     pub(crate) family_order: Vec<u32>,
 }

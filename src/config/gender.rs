@@ -9,6 +9,7 @@ pub enum Gender {
     Female = 2,
     Undefined = 3,
     Other = 4,
+    NonBinary = 5,
 }
 
 impl Gender {
@@ -17,6 +18,7 @@ impl Gender {
             Some("M") => Gender::Male,
             Some("F") => Gender::Female,
             Some("U") => Gender::Undefined,
+            Some("X") => Gender::NonBinary,
             Some(_) => Gender::Other,
             Option::None => Gender::None,
         }
@@ -54,7 +56,8 @@ mod tests {
         assert_eq!(Gender::from_sex_value(Some("M")), Gender::Male);
         assert_eq!(Gender::from_sex_value(Some("F")), Gender::Female);
         assert_eq!(Gender::from_sex_value(Some("U")), Gender::Undefined);
-        assert_eq!(Gender::from_sex_value(Some("X")), Gender::Other);
+        assert_eq!(Gender::from_sex_value(Some("X")), Gender::NonBinary);
+        assert_eq!(Gender::from_sex_value(Some("Q")), Gender::Other);
         assert_eq!(Gender::from_sex_value(Option::None), Gender::None);
     }
 
@@ -75,6 +78,7 @@ mod tests {
             facts: vec![Fact::of("SEX", Some("F"), Option::None)],
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         ged.reindex();
         assert_eq!(Gender::of_person(&ged, 0), Gender::Female);

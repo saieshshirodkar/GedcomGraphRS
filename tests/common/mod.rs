@@ -26,6 +26,7 @@ impl Builder {
             facts,
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         })
     }
 
@@ -47,6 +48,7 @@ impl Builder {
             wives: Vec::new(),
             children: Vec::new(),
             facts,
+            ..GFamily::default()
         });
         let mut hs: Vec<PersonId> = Vec::new();
         let mut ws: Vec<PersonId> = Vec::new();

@@ -11,6 +11,7 @@ fn person(id: &str) -> GPerson {
         facts: Vec::new(),
         parent_fams: Vec::new(),
         spouse_fams: Vec::new(),
+        ..GPerson::default()
     }
 }
 
@@ -38,6 +39,7 @@ fn push_family_invalidates_family_order() {
         wives: Vec::new(),
         children: Vec::new(),
         facts: Vec::new(),
+        ..GFamily::default()
     });
     g.reindex();
     assert_eq!(g.find_family("F1"), Some(FamilyId(0)));
@@ -47,6 +49,7 @@ fn push_family_invalidates_family_order() {
         wives: Vec::new(),
         children: Vec::new(),
         facts: Vec::new(),
+        ..GFamily::default()
     });
     assert_eq!(g.find_family("F0"), None);
     g.reindex();

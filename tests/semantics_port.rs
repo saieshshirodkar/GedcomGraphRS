@@ -58,6 +58,7 @@ fn stillborn_same_date_dead() {
         ],
         parent_fams: Vec::new(),
         spouse_fams: Vec::new(),
+        ..GPerson::default()
     });
     ged.reindex();
     let mut graph = Graph::with_gedcom(ged);

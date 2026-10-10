@@ -76,6 +76,7 @@ mod tests {
             facts: vec![Fact::dated("BIRT", Some("1920"))],
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         ged.reindex();
         let mut graph = Graph::with_gedcom(ged);

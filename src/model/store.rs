@@ -1,4 +1,5 @@
 use super::gedcom::{FamilyId, GFamily, GPerson, GedcomData, PersonId};
+use crate::parser::date::estimate_year;
 
 impl GedcomData {
     pub fn empty() -> GedcomData {
@@ -164,15 +165,8 @@ fn birth_year(p: &GPerson) -> Option<i32> {
     p.facts
         .iter()
         .find(|f| f.tag == "BIRT" && f.date.is_some())
-        .and_then(|f| f.date.as_ref())
-        .and_then(|d| d.split_whitespace().last())
-        .and_then(|y| {
-            if y.len() >= 3 && y.bytes().all(|b| b.is_ascii_digit()) {
-                y.parse::<i32>().ok()
-            } else {
-                Option::None
-            }
-        })
+        .and_then(|f| f.date.as_deref())
+        .and_then(estimate_year)
 }
 
 fn kid_key(ged: &GedcomData, person: PersonId) -> (bool, i32, &str) {
@@ -200,6 +194,7 @@ mod tests {
             facts: Vec::new(),
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         g.push_person(GPerson {
             id: "I1".to_string(),
@@ -207,6 +202,7 @@ mod tests {
             facts: Vec::new(),
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         g.push_family(GFamily {
             id: "F1".to_string(),
@@ -214,6 +210,7 @@ mod tests {
             wives: Vec::new(),
             children: Vec::new(),
             facts: Vec::new(),
+            ..GFamily::default()
         });
         g
     }
@@ -266,6 +263,7 @@ mod tests {
             facts,
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         }
     }
 
@@ -281,6 +279,7 @@ mod tests {
             wives: Vec::new(),
             children: Vec::new(),
             facts: Vec::new(),
+            ..GFamily::default()
         });
         g.link_children(f, &[c, a, b]);
         assert_eq!(g.families[0].children, vec![a, c, b]);
@@ -297,6 +296,7 @@ mod tests {
             wives: Vec::new(),
             children: Vec::new(),
             facts: Vec::new(),
+            ..GFamily::default()
         });
         g.link_children(f, &[u, d]);
         assert_eq!(g.families[0].children, vec![d, u]);
@@ -314,6 +314,7 @@ mod tests {
             wives: Vec::new(),
             children: Vec::new(),
             facts: Vec::new(),
+            ..GFamily::default()
         });
         g.link_children(f, &[z, m, a]);
         assert_eq!(g.families[0].children, vec![a, m, z]);

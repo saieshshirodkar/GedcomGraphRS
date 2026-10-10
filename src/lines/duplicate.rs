@@ -116,6 +116,7 @@ mod tests {
             facts: vec![Fact::of("SEX", Some("M"), Option::None)],
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         g.push_person(GPerson {
             id: "I2".to_string(),
@@ -123,6 +124,7 @@ mod tests {
             facts: Vec::new(),
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         g.reindex();
         g

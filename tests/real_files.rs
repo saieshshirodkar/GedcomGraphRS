@@ -161,6 +161,7 @@ fn edge_same_birth_and_death_dates() {
         ],
         parent_fams: Vec::new(),
         spouse_fams: Vec::new(),
+        ..GPerson::default()
     });
     ged.reindex();
     let mut graph = Graph::with_gedcom(ged);

@@ -18,11 +18,48 @@ pub fn given_name(display: &str) -> String {
     }
 }
 
+fn piece<'a>(p: &'a crate::model::gedcom::GPerson, tag: &str) -> Option<&'a str> {
+    p.pieces
+        .iter()
+        .find(|x| x.tag == tag)
+        .map(|x| x.value.as_str())
+}
+
+fn name_from_pieces(p: &crate::model::gedcom::GPerson) -> Option<String> {
+    let given = [piece(p, "NPFX"), piece(p, "GIVN")]
+        .into_iter()
+        .flatten()
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let surname = [piece(p, "SPFX"), piece(p, "SURN"), piece(p, "NSFX")]
+        .into_iter()
+        .flatten()
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let mut out = String::new();
+    if !given.is_empty() {
+        out.push_str(&given);
+    }
+    if !surname.is_empty() {
+        if !out.is_empty() {
+            out.push(' ');
+        }
+        out.push('/');
+        out.push_str(&surname);
+        out.push('/');
+    }
+    (!out.is_empty()).then_some(out)
+}
+
 pub fn name_lines(ged: &GedcomData, person: u32, duplicate: bool) -> Vec<String> {
     let mut lines: Vec<String> = Vec::new();
     if let Some(p) = ged.person(person) {
         if let Some(n) = p.names.first() {
             lines.push(given_name(&n.display));
+        } else if let Some(fallback) = name_from_pieces(p) {
+            lines.push(given_name(&fallback));
         } else {
             lines.push("[No name]".to_string());
         }

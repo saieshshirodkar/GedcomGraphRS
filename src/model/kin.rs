@@ -103,6 +103,7 @@ mod tests {
             facts: vec![Fact::of("SEX", Some("M"), Option::None)],
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         let b = g.push_person(GPerson {
             id: "I2".to_string(),
@@ -110,6 +111,7 @@ mod tests {
             facts: vec![Fact::of("SEX", Some("F"), Option::None)],
             parent_fams: Vec::new(),
             spouse_fams: Vec::new(),
+            ..GPerson::default()
         });
         let f = g.push_family(GFamily {
             id: "F1".to_string(),
@@ -117,6 +119,7 @@ mod tests {
             wives: Vec::new(),
             children: Vec::new(),
             facts: vec![Fact::dated("MARR", Some("1895"))],
+            ..GFamily::default()
         });
         g.link_spouses(f, &[a], &[b]);
         g.reindex();
@@ -154,6 +157,7 @@ mod tests {
                 facts: Vec::new(),
                 parent_fams: Vec::new(),
                 spouse_fams: Vec::new(),
+                ..GPerson::default()
             });
             if let Some(par) = prev {
                 let f = g.push_family(GFamily {
@@ -162,6 +166,7 @@ mod tests {
                     wives: Vec::new(),
                     children: Vec::new(),
                     facts: Vec::new(),
+                    ..GFamily::default()
                 });
                 g.link_spouses(f, &[par], &[]);
                 g.link_children(f, &[p]);
@@ -184,6 +189,7 @@ mod tests {
                 facts: Vec::new(),
                 parent_fams: Vec::new(),
                 spouse_fams: Vec::new(),
+                ..GPerson::default()
             }));
         }
         let f = g.push_family(GFamily {
@@ -192,6 +198,7 @@ mod tests {
             wives: Vec::new(),
             children: Vec::new(),
             facts: Vec::new(),
+            ..GFamily::default()
         });
         g.link_spouses(f, &[ids[0], ids[1]], &[ids[2]]);
         g.reindex();
