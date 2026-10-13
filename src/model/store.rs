@@ -139,7 +139,6 @@ impl GedcomData {
                 }
             }
         }
-        self.reindex();
     }
 }
 
@@ -244,6 +243,7 @@ mod tests {
         g.link_spouses(FamilyId(0), &[PersonId(0)], &[PersonId(1)]);
         g.link_children(FamilyId(0), &[PersonId(1)]);
         g.link_children(FamilyId(0), &[PersonId(1)]);
+        g.reindex();
         assert_eq!(g.families[0].husbands, vec![PersonId(0)]);
         assert_eq!(g.families[0].wives, vec![PersonId(1)]);
         assert_eq!(g.families[0].children, vec![PersonId(1)]);
@@ -282,6 +282,7 @@ mod tests {
             ..GFamily::default()
         });
         g.link_children(f, &[c, a, b]);
+        g.reindex();
         assert_eq!(g.families[0].children, vec![a, c, b]);
     }
 
@@ -299,6 +300,7 @@ mod tests {
             ..GFamily::default()
         });
         g.link_children(f, &[u, d]);
+        g.reindex();
         assert_eq!(g.families[0].children, vec![d, u]);
     }
 
@@ -317,6 +319,7 @@ mod tests {
             ..GFamily::default()
         });
         g.link_children(f, &[z, m, a]);
+        g.reindex();
         assert_eq!(g.families[0].children, vec![a, m, z]);
     }
 }

@@ -80,7 +80,7 @@ fn fold(arena: &mut Arena, level: i32, tag: &str, value: &str) -> bool {
     let Some(prev_level) = arena.levels.get(prev) else {
         return false;
     };
-    if *prev_level + 1 != level {
+    if prev_level.checked_add(1) != Some(level) {
         return false;
     }
     let piece = undouble_at(value);

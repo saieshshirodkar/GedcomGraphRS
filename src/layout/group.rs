@@ -188,8 +188,10 @@ impl Animator {
                 if let (Some(s), Some(e)) = (start, end) {
                     let a = list.iter().position(|n| *n == s).unwrap_or(0);
                     let b = list.iter().position(|n| *n == e).unwrap_or(a);
-                    for n in &list[a..b] {
-                        w += self.node_width(*n) + HORIZONTAL_SPACE;
+                    if a < b {
+                        for n in &list[a..b] {
+                            w += self.node_width(*n) + HORIZONTAL_SPACE;
+                        }
                     }
                     w = w - self.node_left_width(s, branch) + self.node_left_width(e, branch);
                 }

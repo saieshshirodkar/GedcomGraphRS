@@ -39,6 +39,7 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
     ged.dialect = dialect;
     let mut person_ids: HashMap<String, PersonId> = HashMap::with_capacity(arena.roots.len());
     let mut family_ids: HashMap<String, FamilyId> = HashMap::with_capacity(arena.roots.len());
+    let mut shadowed: std::collections::HashSet<usize> = std::collections::HashSet::new();
     for r in &arena.roots {
         let n = &arena.nodes[*r];
         if n.tag == "HEAD" || n.tag == "TRLR" {
@@ -46,6 +47,10 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
         }
         if n.tag == "INDI" && !n.xref.is_empty() {
             let id = strip_ats(&n.xref).to_string();
+            if person_ids.contains_key(&id) {
+                shadowed.insert(*r);
+                continue;
+            }
             let idx = ged.push_person(GPerson {
                 id: id.clone(),
                 ..GPerson::default()
@@ -53,6 +58,10 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
             person_ids.insert(id, idx);
         } else if n.tag == "FAM" && !n.xref.is_empty() {
             let id = strip_ats(&n.xref).to_string();
+            if family_ids.contains_key(&id) {
+                shadowed.insert(*r);
+                continue;
+            }
             let idx = ged.push_family(GFamily {
                 id: id.clone(),
                 ..GFamily::default()
@@ -63,6 +72,9 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
     for r in &arena.roots {
         let n = &arena.nodes[*r];
         if n.tag == "INDI" && !n.xref.is_empty() {
+            if shadowed.contains(r) {
+                continue;
+            }
             let id = strip_ats(&n.xref);
             let Some(pi) = person_ids.get(id).copied() else {
                 continue;
@@ -133,6 +145,9 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                 }
             }
         } else if n.tag == "FAM" && !n.xref.is_empty() {
+            if shadowed.contains(r) {
+                continue;
+            }
             let id = strip_ats(&n.xref);
             let Some(fi) = family_ids.get(id).copied() else {
                 continue;

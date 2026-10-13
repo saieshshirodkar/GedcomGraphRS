@@ -46,11 +46,8 @@ pub(crate) fn estimate_year(raw: &str) -> Option<i32> {
         };
         let first = one_date(&rest[..i])?;
         let last = one_date(&rest[i + 1..])?;
-        return Some(if last == first {
-            first
-        } else {
-            first + (last - first) / 2
-        });
+        let mid = (i64::from(first) + i64::from(last)) / 2;
+        return Some(i32::try_from(mid).unwrap_or(first));
     }
     if let Some(rest) = after_modifier(&all, "FROM") {
         let end = rest.iter().position(|t| *t == "TO").unwrap_or(rest.len());
@@ -126,6 +123,20 @@ mod tests {
         for v in ["", "   ", "ABOUT", "unknown", "///"] {
             assert_eq!(estimate_year(v), None, "on {v:?}");
         }
+    }
+
+    #[test]
+    fn extreme_ranges_do_not_overflow() {
+        assert_eq!(
+            estimate_year("BET 2000000000 BCE AND 2000000000 CE"),
+            Some(0)
+        );
+        assert_eq!(estimate_year("BET 0 BCE AND 2147483647"), Some(1073741823));
+        assert_eq!(estimate_year("BET 2147483647 BCE AND 0"), Some(-1073741823));
+        assert_eq!(
+            estimate_year("BET 2147483647 BCE AND 2147483647 CE"),
+            Some(0)
+        );
     }
 
     #[test]

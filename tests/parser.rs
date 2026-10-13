@@ -3,6 +3,41 @@ use gedcomgraph::parse_gedcom;
 
 const SIMPLE: &str = "0 HEAD\n1 GEDC\n2 VERS 5.5.1\n0 @I1@ INDI\n1 NAME John /Smith/\n1 SEX M\n1 BIRT\n2 DATE 1870\n1 FAMS @F1@\n0 @I2@ INDI\n1 NAME Mary /Doe/\n1 SEX F\n1 FAMS @F1@\n0 @I3@ INDI\n1 NAME Kid /Smith/\n1 SEX M\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 CHIL @I3@\n1 MARR\n2 DATE 1895\n0 TRLR\n";
 
+const DUP_XREF: &str =
+    "0 HEAD\n0 @I1@ INDI\n1 NAME A /A/\n0 @I1@ INDI\n1 NAME B /B/\n1 NAME C /C/\n0 TRLR\n";
+
+#[test]
+fn duplicate_xref_does_not_merge_records() {
+    let g = parse_gedcom(DUP_XREF);
+    assert_eq!(g.person_count(), 1);
+    let p = g.person(0).expect("person");
+    assert_eq!(p.names.len(), 1);
+    assert_eq!(p.names[0].display, "A /A/");
+}
+
+#[test]
+fn duplicate_family_xref_does_not_merge_records() {
+    let src = "0 HEAD\n0 @F1@ FAM\n1 MARR\n2 DATE 1900\n0 @F1@ FAM\n1 MARR\n2 DATE 1950\n0 TRLR\n";
+    let g = parse_gedcom(src);
+    assert_eq!(g.family_count(), 1);
+    assert_eq!(g.family(0).expect("family").facts.len(), 1);
+}
+
+#[test]
+fn absurd_levels_do_not_overflow() {
+    let g = parse_gedcom("0 HEAD\n2147483647 CONT x\n2147483647 CONT y\n0 TRLR\n");
+    assert_eq!(g.person_count(), 0);
+    assert_eq!(g.family_count(), 0);
+}
+
+#[test]
+fn absurd_birth_dates_do_not_overflow() {
+    let src = "0 HEAD\n0 @I1@ INDI\n1 BIRT\n2 DATE BET 2000000000 BCE AND 2000000000 CE\n0 @I2@ INDI\n1 BIRT\n2 DATE 1900\n0 @F1@ FAM\n1 CHIL @I1@\n1 CHIL @I2@\n0 TRLR\n";
+    let g = parse_gedcom(src);
+    assert_eq!(g.person_count(), 2);
+    assert_eq!(g.family(0).expect("family").children.len(), 2);
+}
+
 #[test]
 fn parses_people_and_family() {
     let g = parse_gedcom(SIMPLE);
