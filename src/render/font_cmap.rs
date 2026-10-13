@@ -27,7 +27,7 @@ const MAX_GROUPS: usize = 200_000;
 impl Cmap {
     pub(crate) fn lookup(&self, d: &[u8], code: u32) -> u16 {
         if code > 0xFFFF {
-            return self.lookup_wide(code);
+            return self.lookup_group(code);
         }
         let v = code as u16;
         for s in &self.segs {
@@ -35,7 +35,7 @@ impl Cmap {
                 continue;
             }
             if v < s.start {
-                break;
+                continue;
             }
             if s.range_off == 0 {
                 return v.wrapping_add(s.delta as u16);
@@ -54,10 +54,10 @@ impl Cmap {
             }
             return id.wrapping_add(s.delta as u16);
         }
-        0
+        self.lookup_group(code)
     }
 
-    fn lookup_wide(&self, code: u32) -> u16 {
+    fn lookup_group(&self, code: u32) -> u16 {
         for g in &self.groups {
             if code >= g.start && code <= g.end {
                 let Some(id) = g.start_gid.checked_add(code - g.start) else {
@@ -68,17 +68,26 @@ impl Cmap {
         }
         0
     }
+
+    fn absorb(&mut self, other: Cmap) {
+        self.segs.extend(other.segs);
+        self.groups.extend(other.groups);
+    }
 }
 
 pub(crate) fn parse(d: &[u8], off: usize) -> Option<Cmap> {
     let n = usize::from(u16be(d, off.checked_add(2)?)?);
     let mut unicode: Option<Cmap> = Option::None;
     let mut other: Option<Cmap> = Option::None;
+    let mut seen: std::collections::HashSet<usize> = std::collections::HashSet::new();
     for i in 0..n {
         let rec = off.checked_add(4)?.checked_add(i.checked_mul(8)?)?;
         let plat = u16be(d, rec)?;
         let enc = u16be(d, rec.checked_add(2)?)?;
         let sub = off.checked_add(usize::try_from(u32be(d, rec.checked_add(4)?)?).ok()?)?;
+        if !seen.insert(sub) {
+            continue;
+        }
         let parsed = match u16be(d, sub)? {
             4 => parse4(d, sub),
             12 => parse12(d, sub),
@@ -87,7 +96,10 @@ pub(crate) fn parse(d: &[u8], off: usize) -> Option<Cmap> {
         let Some(parsed) = parsed else { continue };
         let pref = plat == 0 || (plat == 3 && (enc == 1 || enc == 10));
         if pref {
-            unicode = Some(parsed);
+            match &mut unicode {
+                Some(acc) => acc.absorb(parsed),
+                slot => *slot = Some(parsed),
+            }
         } else if other.is_none() {
             other = Some(parsed);
         }
@@ -137,14 +149,14 @@ fn parse4(d: &[u8], sub: usize) -> Option<Cmap> {
 }
 
 fn parse12(d: &[u8], sub: usize) -> Option<Cmap> {
-    let n = usize::try_from(u32be(d, sub.checked_add(14)?)?).ok()?;
+    let n = usize::try_from(u32be(d, sub.checked_add(12)?)?).ok()?;
     if n == 0 || n > MAX_GROUPS {
         return Option::None;
     }
-    at(d, sub, 30)?;
+    at(d, sub, 16)?;
     let mut groups: Vec<Group12> = Vec::with_capacity(n.min(4096));
     for g in 0..n {
-        let o = sub.checked_add(30)?.checked_add(g.checked_mul(12)?)?;
+        let o = sub.checked_add(16)?.checked_add(g.checked_mul(12)?)?;
         let (Some(start), Some(end), Some(start_gid)) = (
             u32be(d, o),
             u32be(d, o.checked_add(4)?),

@@ -47,7 +47,7 @@ impl Font {
         p = flags.next;
         let mut xs: Vec<f32> = Vec::with_capacity(total);
         let mut x = 0.0f32;
-        for f in &flags.bytes {
+        for f in &flags.bytes[..total] {
             if f & 0x02 != 0 {
                 let v = f32::from(self.byte_at(p, e)?);
                 p += 1;
@@ -60,7 +60,7 @@ impl Font {
         }
         let mut ys: Vec<f32> = Vec::with_capacity(total);
         let mut y = 0.0f32;
-        for f in &flags.bytes {
+        for f in &flags.bytes[..total] {
             if f & 0x04 != 0 {
                 let v = f32::from(self.byte_at(p, e)?);
                 p += 1;
@@ -128,19 +128,17 @@ impl Font {
             p += 4;
             let mut dx = 0.0f32;
             let mut dy = 0.0f32;
-            if flags & 0x0001 != 0 {
-                if flags & 0x0002 != 0 {
+            let words = flags & 0x0001 != 0;
+            if flags & 0x0002 != 0 {
+                if words {
                     dx = f32::from(self.short_at(p, e)?);
                     dy = f32::from(self.short_at(p.checked_add(2)?, e)?);
-                    p += 4;
                 } else {
-                    p += 2;
+                    dx = f32::from(self.byte_at(p, e)?);
+                    dy = f32::from(self.byte_at(p.checked_add(1)?, e)?);
                 }
-            } else if flags & 0x0002 != 0 {
-                dx = f32::from(self.byte_at(p, e)?);
-                dy = f32::from(self.byte_at(p.checked_add(1)?, e)?);
-                p += 2;
             }
+            p = p.checked_add(if words { 4 } else { 2 })?;
             let (a, b, c, d) = self.component_matrix(flags, &mut p, e)?;
             if flags & 0x0100 != 0 {
                 let n = usize::from(self.word_at(p, e)?);

@@ -26,3 +26,17 @@ fn empty_and_missing_safe() {
     assert!(f.outline(f.glyph_id('A'), 9).is_empty());
     assert!(f.glyph_id('\u{10FFFF}') == 0);
 }
+
+#[test]
+fn ascii_maps_even_when_format12_present() {
+    let Some(f) = dejavu() else { return };
+    for c in "Agz 0193.,'-".chars() {
+        assert_ne!(f.glyph_id(c), 0, "ascii {c:?} unmapped");
+    }
+}
+
+#[test]
+fn format12_subtable_is_live() {
+    let Some(f) = dejavu() else { return };
+    assert_ne!(f.glyph_id('\u{1F600}'), 0, "format 12 cmap not consulted");
+}

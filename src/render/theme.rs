@@ -37,6 +37,11 @@ pub struct Scale {
 
 impl Scale {
     pub fn of(s: f32) -> Scale {
+        let s = if s.is_finite() && s > 0.0 {
+            s.clamp(0.5, 64.0)
+        } else {
+            4.0
+        };
         Scale {
             s,
             name_px: (17.0 * s).round(),

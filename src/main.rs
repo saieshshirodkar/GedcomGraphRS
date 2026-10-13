@@ -140,10 +140,15 @@ fn run() -> Result<(), AppError> {
     }
     if let Some(second) = args.get(2) {
         if second.ends_with(".svg") {
-            let scale = args
+            let raw = args
                 .get(3)
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(4.0);
+            if !raw.is_finite() || raw <= 0.0 {
+                eprintln!("scale must be a positive number, got {raw}");
+                return Ok(());
+            }
+            let scale = raw.clamp(0.5, 64.0);
             return render_file(path, second, scale, args.get(4).map(|s| s.as_str()));
         }
         if second.ends_with(".png") {
