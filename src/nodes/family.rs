@@ -41,10 +41,10 @@ impl BondData {
 
     pub fn marriage_year(&self) -> String {
         if let Some(d) = &self.marriage_date {
-            if let Some(i) = d.rfind(' ') {
-                if i > 0 {
-                    return d[i..].to_string();
-                }
+            if let Some(i) = d.rfind(' ')
+                && i > 0
+            {
+                return d[i..].to_string();
             }
             return d.clone();
         }

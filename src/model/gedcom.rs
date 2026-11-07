@@ -139,15 +139,14 @@ impl Fact {
 }
 
 pub fn essence(ged: &GedcomData, person: Option<u32>) -> String {
-    if let Some(idx) = person {
-        if let Some(p) = ged.person(idx) {
-            if let Some(n) = p.names.first() {
-                let s: String = n.display.chars().filter(|c| *c != '/').collect();
-                let t = s.trim().to_string();
-                if !t.is_empty() {
-                    return t;
-                }
-            }
+    if let Some(idx) = person
+        && let Some(p) = ged.person(idx)
+        && let Some(n) = p.names.first()
+    {
+        let s: String = n.display.chars().filter(|c| *c != '/').collect();
+        let t = s.trim().to_string();
+        if !t.is_empty() {
+            return t;
         }
     }
     "[No name]".to_string()
