@@ -43,7 +43,7 @@ The engine does not measure text on its own. Before layout, the render path meas
 
 ## Fonts
 
-Text measurement needs TrueType fonts at runtime. The loader walks the platform font directories searching for known family stems, preferring DejaVu Sans, then Liberation Sans, Noto Sans, FreeSans, Roboto, and the common system faces. It accepts `.ttf`, `.otf`, `.ttc`, and `.pfb`, and reads both cmap format 4 and format 12 so wide characters resolve. Bold and italic fall back to the regular face when no separate face is found.
+Text measurement needs TrueType fonts at runtime. The loader walks the platform font directories searching for known family stems, preferring DejaVu Sans, then Liberation Sans, Noto Sans, FreeSans, Roboto, and the common system faces. It accepts `.ttf`, `.otf`, and `.ttc`, and reads both cmap format 4 and format 12 so wide characters resolve. Bold and italic fall back to the regular face when no separate face is found. The loaded regular face is embedded into the SVG as `@font-face` so rendered text matches measured widths without a system font.
 
 Directories searched:
 

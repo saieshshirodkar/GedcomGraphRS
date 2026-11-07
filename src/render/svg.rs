@@ -26,15 +26,23 @@ pub(crate) fn trunc(fonts: &Fonts, mut s: String, max_w: f32, px: f32, style: St
     s
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Ink {
+    pub fill: [u8; 4],
+    pub family: &'static str,
+}
+
 pub(crate) fn push_text_el(
     o: &mut String,
     x: f32,
     baseline: f32,
     px: f32,
     style: Style,
-    fill: [u8; 4],
+    ink: Ink,
     body: &str,
 ) {
+    let fill = ink.fill;
+    let family = ink.family;
     let weight = if style == Style::Bold {
         " font-weight=\"bold\""
     } else {
@@ -50,7 +58,9 @@ pub(crate) fn push_text_el(
     push_fx1(o, x);
     o.push_str("\" y=\"");
     push_fx1(o, baseline);
-    o.push_str("\" font-family=\"sans-serif\" font-size=\"");
+    o.push_str("\" font-family=\"");
+    o.push_str(family);
+    o.push_str("\" font-size=\"");
     push_fx0(o, px);
     o.push('"');
     o.push_str(weight);
@@ -83,7 +93,12 @@ pub fn render_svg(
         ),
     );
     push_hex(&mut s, COLOR_BG);
-    s.push_str("\"/>\n<g>\n");
+    s.push_str("\"/>\n");
+    let family = crate::render::embed::face_name(fonts).unwrap_or("sans-serif");
+    if let Some(style) = crate::render::embed::font_face_style(fonts) {
+        s.push_str(&style);
+    }
+    s.push_str("<g>\n");
 
     for l in &a.lines {
         let (x1, y1, x2, y2) = (
@@ -193,7 +208,7 @@ pub fn render_svg(
         s.push_str("\" stroke-linecap=\"round\" fill=\"none\"/>\n");
     }
 
-    super::svg_cards::draw_cards(&mut s, graph, fonts, sc, ox, oy);
+    super::svg_cards::draw_cards(&mut s, graph, fonts, sc, ox, oy, family);
     s.push_str("</g>\n</svg>\n");
     s
 }
@@ -250,12 +265,35 @@ mod tests {
     #[test]
     fn text_el_shape() {
         let mut el = String::new();
-        push_text_el(&mut el, 10.0, 20.0, 68.0, Style::Bold, COLOR_TEXT, "Hi");
+        push_text_el(
+            &mut el,
+            10.0,
+            20.0,
+            68.0,
+            Style::Bold,
+            Ink {
+                fill: COLOR_TEXT,
+                family: "gedcomgraph",
+            },
+            "Hi",
+        );
         assert!(el.contains("font-weight=\"bold\""));
         assert!(el.contains("text-anchor=\"middle\""));
         assert!(el.contains(">Hi</text>"));
+        assert!(el.contains("font-family=\"gedcomgraph\""));
         let mut plain = String::new();
-        push_text_el(&mut plain, 0.0, 0.0, 56.0, Style::Regular, COLOR_TEXT, "Yo");
+        push_text_el(
+            &mut plain,
+            0.0,
+            0.0,
+            56.0,
+            Style::Regular,
+            Ink {
+                fill: COLOR_TEXT,
+                family: "sans-serif",
+            },
+            "Yo",
+        );
         assert!(!plain.contains("font-weight"));
         let mut esc = String::new();
         push_text_el(
@@ -264,7 +302,10 @@ mod tests {
             0.0,
             56.0,
             Style::Italic,
-            COLOR_TEXT,
+            Ink {
+                fill: COLOR_TEXT,
+                family: "sans-serif",
+            },
             "a&b<c>d",
         );
         assert!(esc.contains(">a&amp;b&lt;c&gt;d</text>"));

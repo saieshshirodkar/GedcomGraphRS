@@ -1,3 +1,4 @@
+pub mod embed;
 pub mod font_cmap;
 pub mod font_draw;
 pub mod font_file;

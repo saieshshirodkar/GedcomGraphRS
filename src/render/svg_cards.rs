@@ -1,8 +1,9 @@
 use crate::engine::graph::Graph;
+use crate::model::helpers::{person_is_dead, person_restricted};
 use crate::render::font_draw::{Fonts, Style};
-use crate::render::svg::{border_of, push_text_el, trunc};
+use crate::render::svg::{Ink, border_of, push_text_el, trunc};
 use crate::render::svg_fmt::{push_alpha, push_fx1, push_hex};
-use crate::render::texts::{date_lines, is_dead, name_lines, titles_of};
+use crate::render::texts::{date_lines, name_lines, titles_of};
 use crate::render::theme::{
     COLOR_BACK_ELEMENT, COLOR_PARTNER, COLOR_RIBBON_BLACK, COLOR_RIBBON_WHITE, COLOR_TEXT,
     COLOR_TEXT_VEILED, Scale,
@@ -54,7 +55,15 @@ fn card_rects(
     s.push_str("\"/>\n");
 }
 
-fn mini_text(s: &mut String, x: f32, y: f32, h: f32, sc: &Scale, amount: u32) {
+fn mini_text(
+    s: &mut String,
+    x: f32,
+    y: f32,
+    h: f32,
+    sc: &Scale,
+    amount: u32,
+    family: &'static str,
+) {
     let mut txt = String::with_capacity(4);
     if amount > 100 {
         txt.push_str("100+");
@@ -67,7 +76,10 @@ fn mini_text(s: &mut String, x: f32, y: f32, h: f32, sc: &Scale, amount: u32) {
         y + (h + sc.mini_px * 0.7) / 2.0,
         sc.mini_px,
         Style::Bold,
-        COLOR_TEXT,
+        Ink {
+            fill: COLOR_TEXT,
+            family,
+        },
         &txt,
     );
 }
@@ -79,6 +91,7 @@ pub(crate) fn draw_cards(
     sc: &Scale,
     ox: f32,
     oy: f32,
+    family: &'static str,
 ) {
     for pid in 0..graph.anim.person_count() as u32 {
         let p = &graph.anim.persons[pid as usize];
@@ -102,10 +115,11 @@ pub(crate) fn draw_cards(
             sc.border,
         );
         if p.base.mini {
-            mini_text(s, x + w / 2.0, y, h, sc, p.amount);
+            mini_text(s, x + w / 2.0, y, h, sc, p.amount, family);
             continue;
         }
-        if is_dead(&graph.gedcom, p.person) {
+        let restricted = person_restricted(&graph.gedcom, p.person);
+        if !restricted && person_is_dead(&graph.gedcom, p.person) {
             let rs = sc.ribbon / 22.0;
             let rx = x + w - sc.ribbon;
             s.reserve(180);
@@ -157,7 +171,10 @@ pub(crate) fn draw_cards(
                 cy + sc.name_px * 0.8,
                 sc.name_px,
                 Style::Bold,
-                COLOR_TEXT,
+                Ink {
+                    fill: COLOR_TEXT,
+                    family,
+                },
                 &t,
             );
             cy += sc.lh_name;
@@ -172,7 +189,10 @@ pub(crate) fn draw_cards(
                     cy + sc.title_px * 0.8,
                     sc.title_px,
                     Style::Italic,
-                    COLOR_TEXT,
+                    Ink {
+                        fill: COLOR_TEXT,
+                        family,
+                    },
                     &t,
                 );
                 cy += sc.lh_title;
@@ -186,7 +206,10 @@ pub(crate) fn draw_cards(
                 cy + sc.date_px * 0.8,
                 sc.date_px,
                 Style::Regular,
-                COLOR_TEXT_VEILED,
+                Ink {
+                    fill: COLOR_TEXT_VEILED,
+                    family,
+                },
                 &t,
             );
             cy += sc.lh_date;
