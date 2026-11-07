@@ -2,7 +2,7 @@
 name = "gedcomgraph"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 description = "GEDCOM family tree layout engine"
 license = "MIT"
 
@@ -15,11 +15,10 @@ name = "gedcomgraph"
 path = "src/main.rs"
 
 [profile.release]
-opt-level = "z"
-lto = true
+opt-level = 3
+lto = "fat"
 codegen-units = 1
 panic = "abort"
-overflow-checks = true
 strip = true
 
 [lints.rust]
