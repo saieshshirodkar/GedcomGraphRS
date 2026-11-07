@@ -83,8 +83,23 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                 let kid = &arena.nodes[*c];
                 match kid.tag.as_str() {
                     "NAME" => {
+                        let pieces: Vec<NamePiece> = arena.kids[*c]
+                            .iter()
+                            .filter_map(|gc| arena.nodes.get(*gc))
+                            .filter(|gc| {
+                                matches!(
+                                    gc.tag.as_str(),
+                                    "GIVN" | "SURN" | "NICK" | "NPFX" | "NSFX" | "SPFX"
+                                ) && !gc.value.is_empty()
+                            })
+                            .map(|gc| NamePiece {
+                                tag: gc.tag.clone(),
+                                value: gc.value.clone(),
+                            })
+                            .collect();
                         if let Some(p) = ged.persons.get_mut(usize::from(pi)) {
                             p.names.push(Name::of(&kid.value));
+                            p.pieces.extend(pieces);
                         }
                     }
                     "GIVN" | "SURN" | "NICK" | "NPFX" | "NSFX" | "SPFX" => {
@@ -122,7 +137,7 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                             continue;
                         };
                         if let Some(fi) = family_ids.get(fid).copied() {
-                            ged.link_spouse(fi, pi);
+                            ged.link_spouse_person(fi, pi);
                         }
                     }
                     _ => {
@@ -160,12 +175,12 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                             continue;
                         };
                         if let Some(pi) = person_ids.get(pid).copied() {
-                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
-                                if !f.husbands.contains(&pi) {
-                                    f.husbands.push(pi);
-                                }
+                            if let Some(f) = ged.families.get_mut(usize::from(fi))
+                                && !f.husbands.contains(&pi)
+                            {
+                                f.husbands.push(pi);
                             }
-                            ged.link_spouse(fi, pi);
+                            ged.link_spouse_person(fi, pi);
                         }
                     }
                     "WIFE" => {
@@ -173,12 +188,12 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                             continue;
                         };
                         if let Some(pi) = person_ids.get(pid).copied() {
-                            if let Some(f) = ged.families.get_mut(usize::from(fi)) {
-                                if !f.wives.contains(&pi) {
-                                    f.wives.push(pi);
-                                }
+                            if let Some(f) = ged.families.get_mut(usize::from(fi))
+                                && !f.wives.contains(&pi)
+                            {
+                                f.wives.push(pi);
                             }
-                            ged.link_spouse(fi, pi);
+                            ged.link_spouse_person(fi, pi);
                         }
                     }
                     "CHIL" => {
@@ -211,6 +226,13 @@ pub fn parse_gedcom(text: &str) -> GedcomData {
                     }
                 }
             }
+        }
+    }
+    for i in 0..ged.persons.len() {
+        let pid = PersonId(u32::try_from(i).unwrap_or(u32::MAX));
+        let fams = ged.persons[i].spouse_fams.clone();
+        for fam in fams {
+            ged.link_spouse(fam, pid);
         }
     }
     ged.reindex();

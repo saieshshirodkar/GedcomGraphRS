@@ -153,6 +153,11 @@ impl Graph {
     }
 
     pub fn start_from(&mut self, fulcrum: u32) {
+        if self.gedcom.person(fulcrum).is_none() {
+            self.fulcrum = Option::None;
+            self.anim.reset_run();
+            return;
+        }
         self.walk(fulcrum);
     }
 }

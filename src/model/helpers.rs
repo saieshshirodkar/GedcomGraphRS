@@ -12,6 +12,14 @@ pub fn person_is_dead(ged: &GedcomData, person: u32) -> bool {
     false
 }
 
+pub fn person_restricted(ged: &GedcomData, person: u32) -> bool {
+    ged.person(person).is_some_and(|p| p.restricted)
+}
+
+pub fn family_restricted(ged: &GedcomData, family: u32) -> bool {
+    ged.family(family).is_some_and(|f| f.restricted)
+}
+
 pub fn person_gender(ged: &GedcomData, person: u32) -> Gender {
     Gender::of_person(ged, person)
 }

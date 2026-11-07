@@ -2,6 +2,7 @@
 mod tests {
     use gedcomgraph::model::PersonId;
     use gedcomgraph::model::gedcom::{Fact, GPerson, GedcomData, Name};
+    use gedcomgraph::model::helpers::person_is_dead as is_dead;
     use gedcomgraph::render::texts::*;
 
     fn ged_one(display: &str, facts: Vec<Fact>) -> (GedcomData, PersonId) {

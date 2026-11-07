@@ -168,6 +168,12 @@ fn run() -> Result<(), AppError> {
     let mut graph = Graph::with_gedcom(ged);
     graph.set_max_bitmap_size(2000.0);
     graph.start_from(fulcrum);
+    let fonts = Fonts::load();
+    if fonts.regular.is_some() {
+        measure_all(&mut graph, &fonts, &Scale::of(4.0));
+    } else {
+        graph.set_all_person_sizes(60.0, 40.0);
+    }
     graph.init_nodes();
     graph.place_nodes();
     println!("file {path}");

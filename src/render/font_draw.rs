@@ -53,7 +53,7 @@ const ITALIC_STEMS: &[&str] = &[
     "Verdana-Italic",
 ];
 
-const EXTS: &[&str] = &["ttf", "ttc", "otf", "pfb"];
+const EXTS: &[&str] = &["ttf", "ttc", "otf"];
 
 const SCAN_BUDGET: usize = 4000;
 const MAX_DEPTH: usize = 4;

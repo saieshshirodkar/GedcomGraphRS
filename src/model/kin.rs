@@ -3,7 +3,10 @@ use crate::model::gedcom::{FamilyId, GedcomData, PersonId};
 pub fn count_ancestors(ged: &GedcomData, person: u32) -> u32 {
     let mut amount = 1u32;
     let mut stack: Vec<PersonId> = Vec::with_capacity(8);
+    let mut seen: std::collections::HashSet<PersonId> =
+        std::collections::HashSet::with_capacity(16);
     stack.push(PersonId(person));
+    seen.insert(PersonId(person));
     while let Some(cur) = stack.pop() {
         if amount > 100 {
             break;
@@ -12,12 +15,16 @@ pub fn count_ancestors(ged: &GedcomData, person: u32) -> u32 {
             for fam in &p.parent_fams {
                 if let Some(f) = ged.family(fam.0) {
                     for h in &f.husbands {
-                        amount += 1;
-                        stack.push(*h);
+                        if seen.insert(*h) {
+                            amount += 1;
+                            stack.push(*h);
+                        }
                     }
                     for w in &f.wives {
-                        amount += 1;
-                        stack.push(*w);
+                        if seen.insert(*w) {
+                            amount += 1;
+                            stack.push(*w);
+                        }
                     }
                 }
             }
@@ -29,7 +36,10 @@ pub fn count_ancestors(ged: &GedcomData, person: u32) -> u32 {
 pub fn count_descendants(ged: &GedcomData, person: u32) -> u32 {
     let mut amount = 1u32;
     let mut stack: Vec<PersonId> = Vec::with_capacity(8);
+    let mut seen: std::collections::HashSet<PersonId> =
+        std::collections::HashSet::with_capacity(16);
     stack.push(PersonId(person));
+    seen.insert(PersonId(person));
     while let Some(cur) = stack.pop() {
         if amount > 100 {
             break;
@@ -38,8 +48,10 @@ pub fn count_descendants(ged: &GedcomData, person: u32) -> u32 {
             for fam in &p.spouse_fams {
                 if let Some(f) = ged.family(fam.0) {
                     for c in &f.children {
-                        amount += 1;
-                        stack.push(*c);
+                        if seen.insert(*c) {
+                            amount += 1;
+                            stack.push(*c);
+                        }
                     }
                 }
             }
@@ -55,6 +67,9 @@ pub fn parent_family_last(ged: &GedcomData, person: u32) -> Option<FamilyId> {
 
 pub fn family_marriage_date(ged: &GedcomData, family: u32) -> Option<String> {
     ged.family(family).and_then(|f| {
+        if f.restricted {
+            return Option::None;
+        }
         f.facts
             .iter()
             .find(|e| e.tag == "MARR")
