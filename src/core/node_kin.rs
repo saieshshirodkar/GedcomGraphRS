@@ -91,13 +91,13 @@ impl Animator {
     pub(crate) fn node_husband(&self, nid: NodeId) -> Option<u32> {
         match nid {
             NodeId::Person(i) => {
-                if let Some(p) = self.persons.get(i as usize) {
-                    if let Some(f) = p.family {
-                        return self
-                            .families
-                            .get(f as usize)
-                            .and_then(|fam| fam.partners.first().copied());
-                    }
+                if let Some(p) = self.persons.get(i as usize)
+                    && let Some(f) = p.family
+                {
+                    return self
+                        .families
+                        .get(f as usize)
+                        .and_then(|fam| fam.partners.first().copied());
                 }
                 Some(i)
             }
@@ -111,16 +111,16 @@ impl Animator {
     pub(crate) fn node_wife(&self, nid: NodeId) -> Option<u32> {
         match nid {
             NodeId::Person(i) => {
-                if let Some(p) = self.persons.get(i as usize) {
-                    if let Some(f) = p.family {
-                        return self.families.get(f as usize).and_then(|fam| {
-                            if fam.partners.len() > 1 {
-                                fam.partners.get(1).copied()
-                            } else {
-                                fam.partners.first().copied()
-                            }
-                        });
-                    }
+                if let Some(p) = self.persons.get(i as usize)
+                    && let Some(f) = p.family
+                {
+                    return self.families.get(f as usize).and_then(|fam| {
+                        if fam.partners.len() > 1 {
+                            fam.partners.get(1).copied()
+                        } else {
+                            fam.partners.first().copied()
+                        }
+                    });
                 }
                 Some(i)
             }

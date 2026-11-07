@@ -188,10 +188,10 @@ fn collect(dir: &std::path::Path, depth: usize, out: &mut Vec<std::path::PathBuf
         let p = e.path();
         if p.is_dir() {
             collect(&p, depth + 1, out);
-        } else if let Some(x) = p.extension().and_then(|e| e.to_str()) {
-            if ["ttf", "otf", "ttc", "pfb"].contains(&x.to_ascii_lowercase().as_str()) {
-                out.push(p);
-            }
+        } else if let Some(x) = p.extension().and_then(|e| e.to_str())
+            && ["ttf", "otf", "ttc", "pfb"].contains(&x.to_ascii_lowercase().as_str())
+        {
+            out.push(p);
         }
     }
 }

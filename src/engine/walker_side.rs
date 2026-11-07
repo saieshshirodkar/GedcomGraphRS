@@ -108,10 +108,10 @@ impl Graph {
         if let Some(g) = self.anim.groups.get(gid as usize) {
             for nid in g.list.clone() {
                 for p in self.anim.node_persons(nid) {
-                    if let Some(q) = self.anim.persons.get(p as usize) {
-                        if q.person == person {
-                            return true;
-                        }
+                    if let Some(q) = self.anim.persons.get(p as usize)
+                        && q.person == person
+                    {
+                        return true;
                     }
                 }
             }

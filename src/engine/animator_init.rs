@@ -27,12 +27,11 @@ impl Animator {
             }
             if let Some(h) = self.node_row_height(*nid) {
                 let slot = self.node_generation(*nid) + max_above;
-                if slot >= 0 {
-                    if let Some(r) = row_max.get_mut(slot as usize) {
-                        if h > *r {
-                            *r = h;
-                        }
-                    }
+                if slot >= 0
+                    && let Some(r) = row_max.get_mut(slot as usize)
+                    && h > *r
+                {
+                    *r = h;
                 }
             }
         }
@@ -129,18 +128,18 @@ impl Animator {
                 .get(fid as usize)
                 .map(|f| f.base.h)
                 .unwrap_or(0.0);
-            if let Some(f) = self.families.get_mut(fid as usize) {
-                if let Some(b) = f.bond.as_mut() {
-                    b.w = bw;
-                    b.h = bh;
-                    if b.marriage_date.is_some() {
-                        b.overlap = (MARRIAGE_WIDTH - crate::config::MARRIAGE_INNER_WIDTH) / 2.0;
-                        if side == crate::config::Side::Left || side == crate::config::Side::Right {
-                            f.base.w += b.overlap;
-                        }
+            if let Some(f) = self.families.get_mut(fid as usize)
+                && let Some(b) = f.bond.as_mut()
+            {
+                b.w = bw;
+                b.h = bh;
+                if b.marriage_date.is_some() {
+                    b.overlap = (MARRIAGE_WIDTH - crate::config::MARRIAGE_INNER_WIDTH) / 2.0;
+                    if side == crate::config::Side::Left || side == crate::config::Side::Right {
+                        f.base.w += b.overlap;
                     }
-                    f.base.w += f.bond_width();
                 }
+                f.base.w += f.bond_width();
             }
             self.bond_owners.push(fid);
         }
@@ -168,23 +167,22 @@ impl Animator {
         let mut drop_bonds: Vec<u32> = Vec::new();
         for i in 0..self.persons.len() {
             let origin = self.persons.get(i).and_then(|p| p.origin);
-            if let Some(o) = origin {
-                if self.node_mini(o) {
-                    if let Some(y) = self.node_youth(o) {
-                        let single = self
-                            .groups
-                            .get(y as usize)
-                            .map(|g| g.list.len() == 1)
-                            .unwrap_or(false);
-                        if single {
-                            if let Some(p) = self.persons.get_mut(i) {
-                                p.origin = Option::None;
-                            }
-                            drop_nodes.push(o);
-                            if let NodeId::Family(f) = o {
-                                drop_bonds.push(f);
-                            }
-                        }
+            if let Some(o) = origin
+                && self.node_mini(o)
+                && let Some(y) = self.node_youth(o)
+            {
+                let single = self
+                    .groups
+                    .get(y as usize)
+                    .map(|g| g.list.len() == 1)
+                    .unwrap_or(false);
+                if single {
+                    if let Some(p) = self.persons.get_mut(i) {
+                        p.origin = Option::None;
+                    }
+                    drop_nodes.push(o);
+                    if let NodeId::Family(f) = o {
+                        drop_bonds.push(f);
                     }
                 }
             }

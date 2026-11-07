@@ -32,23 +32,23 @@ impl Animator {
             f.base.x = x;
         }
         if partners.is_empty() {
-            if let Some(f) = self.families.get_mut(fid as usize) {
-                if let Some(b) = f.bond.as_mut() {
-                    b.place_x(x);
-                }
+            if let Some(f) = self.families.get_mut(fid as usize)
+                && let Some(b) = f.bond.as_mut()
+            {
+                b.place_x(x);
             }
             return;
         }
         if side == crate::config::Side::Right {
-            if let Some(f) = self.families.get_mut(fid as usize) {
-                if let Some(b) = f.bond.as_mut() {
-                    b.x = x;
-                }
+            if let Some(f) = self.families.get_mut(fid as usize)
+                && let Some(b) = f.bond.as_mut()
+            {
+                b.x = x;
             }
-            if let Some(p0) = partners.first() {
-                if let Some(p) = self.persons.get_mut(*p0 as usize) {
-                    p.apply_x(x + bond_w - overlap);
-                }
+            if let Some(p0) = partners.first()
+                && let Some(p) = self.persons.get_mut(*p0 as usize)
+            {
+                p.apply_x(x + bond_w - overlap);
             }
             return;
         }
@@ -64,10 +64,10 @@ impl Animator {
                     .map(|p| p.base.w)
                     .unwrap_or(0.0);
                 cursor += w0;
-                if let Some(f) = self.families.get_mut(fid as usize) {
-                    if let Some(b) = f.bond.as_mut() {
-                        b.place_x(cursor);
-                    }
+                if let Some(f) = self.families.get_mut(fid as usize)
+                    && let Some(b) = f.bond.as_mut()
+                {
+                    b.place_x(cursor);
                 }
                 cursor += self
                     .families
@@ -101,10 +101,10 @@ impl Animator {
                         p.apply_y(cy - rel);
                     }
                 }
-                if let Some(f) = self.families.get_mut(i as usize) {
-                    if let Some(b) = f.bond.as_mut() {
-                        b.y = y;
-                    }
+                if let Some(f) = self.families.get_mut(i as usize)
+                    && let Some(b) = f.bond.as_mut()
+                {
+                    b.y = y;
                 }
             }
         }

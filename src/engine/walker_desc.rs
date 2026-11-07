@@ -53,10 +53,10 @@ impl Graph {
                     Some(fg),
                 );
                 for n in genus.0.clone() {
-                    if let NodeId::Person(i) = n {
-                        if let Some(p) = self.anim.persons.get_mut(i as usize) {
-                            p.half_sibling = true;
-                        }
+                    if let NodeId::Person(i) = n
+                        && let Some(p) = self.anim.persons.get_mut(i as usize)
+                    {
+                        p.half_sibling = true;
                     }
                     let limit = self.sibling_nephew_generations;
                     self.find_descendants(n, 0, limit, false);

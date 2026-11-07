@@ -24,14 +24,13 @@ impl Animator {
             }
             return 0.0;
         }
-        if let Some(o) = origins.first() {
-            if self.node_union(*o).is_some() {
-                if let Some(y) = self.node_youth(*o) {
-                    self.group_refresh_width(y);
-                    let yc = self.group_center_x(y);
-                    return self.node_center_x(*o) - yc;
-                }
-            }
+        if let Some(o) = origins.first()
+            && self.node_union(*o).is_some()
+            && let Some(y) = self.node_youth(*o)
+        {
+            self.group_refresh_width(y);
+            let yc = self.group_center_x(y);
+            return self.node_center_x(*o) - yc;
         }
         0.0
     }

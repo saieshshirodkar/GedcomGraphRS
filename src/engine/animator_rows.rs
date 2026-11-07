@@ -40,14 +40,14 @@ impl Animator {
                             ltr,
                         }));
                     }
-                } else if partners.len() > 1 {
-                    if let (Some(a), Some(b)) = (partners.first(), partners.get(1)) {
-                        self.lines.push(LineSeg::of(LineKind::Horizontal {
-                            left: *a,
-                            right: *b,
-                            ltr,
-                        }));
-                    }
+                } else if partners.len() > 1
+                    && let (Some(a), Some(b)) = (partners.first(), partners.get(1))
+                {
+                    self.lines.push(LineSeg::of(LineKind::Horizontal {
+                        left: *a,
+                        right: *b,
+                        ltr,
+                    }));
                 }
                 if stamp == Match::Near {
                     self.lines.push(LineSeg::of(LineKind::Back {

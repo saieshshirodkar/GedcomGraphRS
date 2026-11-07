@@ -57,10 +57,10 @@ impl Animator {
                 if join {
                     let anc = self.unions.get(target as usize).and_then(|u| u.ancestor);
                     for nid in &members {
-                        if Some(*nid) != anc {
-                            if let Some(u) = self.unions.get_mut(target as usize) {
-                                u.list.push(*nid);
-                            }
+                        if Some(*nid) != anc
+                            && let Some(u) = self.unions.get_mut(target as usize)
+                        {
+                            u.list.push(*nid);
                         }
                     }
                 } else {
@@ -80,12 +80,11 @@ impl Animator {
                     .unwrap_or_default();
                 for nid in done {
                     self.set_node_union(nid, Some(target));
-                    if let Some(m) = self.node_main_person(nid) {
-                        if self.persons.get(m as usize).is_some_and(|p| p.is_fulcrum()) {
-                            if let Some(u) = self.unions.get_mut(target as usize) {
-                                u.ancestor = Some(nid);
-                            }
-                        }
+                    if let Some(m) = self.node_main_person(nid)
+                        && self.persons.get(m as usize).is_some_and(|p| p.is_fulcrum())
+                        && let Some(u) = self.unions.get_mut(target as usize)
+                    {
+                        u.ancestor = Some(nid);
                     }
                 }
             }
@@ -103,10 +102,10 @@ impl Animator {
             if let Some(u) = self.unions.get_mut(uid as usize) {
                 u.prev = previous;
             }
-            if let Some(p) = previous {
-                if let Some(u) = self.unions.get_mut(p as usize) {
-                    u.next = Some(uid);
-                }
+            if let Some(p) = previous
+                && let Some(u) = self.unions.get_mut(p as usize)
+            {
+                u.next = Some(uid);
             }
             previous = Some(uid);
         }

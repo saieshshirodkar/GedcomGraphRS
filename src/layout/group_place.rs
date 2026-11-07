@@ -23,25 +23,25 @@ impl Animator {
     pub(crate) fn group_place_ancestors(&mut self, gid: u32) {
         self.group_place_origin_x(gid);
         let origin = self.groups.get(gid as usize).and_then(|g| g.origin);
-        if let Some(o) = origin {
-            if let Some(uid) = self.node_union(o) {
-                let members = self
-                    .unions
-                    .get(uid as usize)
-                    .map(|u| u.list.clone())
-                    .unwrap_or_default();
-                let pos = members.iter().position(|n| *n == o).unwrap_or(0);
-                let ox = self.node_x(o);
-                let mut cursor = ox;
-                for n in members[..pos].iter().rev() {
-                    cursor -= self.node_width(*n) + HORIZONTAL_SPACE;
-                    self.set_node_x(*n, cursor);
-                }
-                cursor = ox + self.node_width(o) + HORIZONTAL_SPACE;
-                for n in &members[pos + 1..] {
-                    self.set_node_x(*n, cursor);
-                    cursor += self.node_width(*n) + HORIZONTAL_SPACE;
-                }
+        if let Some(o) = origin
+            && let Some(uid) = self.node_union(o)
+        {
+            let members = self
+                .unions
+                .get(uid as usize)
+                .map(|u| u.list.clone())
+                .unwrap_or_default();
+            let pos = members.iter().position(|n| *n == o).unwrap_or(0);
+            let ox = self.node_x(o);
+            let mut cursor = ox;
+            for n in members[..pos].iter().rev() {
+                cursor -= self.node_width(*n) + HORIZONTAL_SPACE;
+                self.set_node_x(*n, cursor);
+            }
+            cursor = ox + self.node_width(o) + HORIZONTAL_SPACE;
+            for n in &members[pos + 1..] {
+                self.set_node_x(*n, cursor);
+                cursor += self.node_width(*n) + HORIZONTAL_SPACE;
             }
         }
     }
@@ -141,20 +141,20 @@ impl Animator {
     }
 
     pub(crate) fn group_center_rel_x(&self, gid: u32) -> f32 {
-        if let Some(g) = self.groups.get(gid as usize) {
-            if let (Some(f), Some(l)) = (g.first, g.last) {
-                let fx = self
-                    .persons
-                    .get(f as usize)
-                    .map(|p| p.base.x + p.base.w / 2.0)
-                    .unwrap_or(0.0);
-                let lx = self
-                    .persons
-                    .get(l as usize)
-                    .map(|p| p.base.x + p.base.w / 2.0)
-                    .unwrap_or(0.0);
-                return fx - g.x + (lx - fx) / 2.0;
-            }
+        if let Some(g) = self.groups.get(gid as usize)
+            && let (Some(f), Some(l)) = (g.first, g.last)
+        {
+            let fx = self
+                .persons
+                .get(f as usize)
+                .map(|p| p.base.x + p.base.w / 2.0)
+                .unwrap_or(0.0);
+            let lx = self
+                .persons
+                .get(l as usize)
+                .map(|p| p.base.x + p.base.w / 2.0)
+                .unwrap_or(0.0);
+            return fx - g.x + (lx - fx) / 2.0;
         }
         0.0
     }

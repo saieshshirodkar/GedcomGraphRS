@@ -145,13 +145,13 @@ impl Animator {
     }
 
     pub(crate) fn group_is_origin_mini_or_empty(&self, gid: u32) -> bool {
-        if let Some(g) = self.groups.get(gid as usize) {
-            if let Some(o) = g.origin {
-                if self.node_is_multi(o) {
-                    return false;
-                }
-                return self.node_mini(o) || self.node_person_count(o) == 0;
+        if let Some(g) = self.groups.get(gid as usize)
+            && let Some(o) = g.origin
+        {
+            if self.node_is_multi(o) {
+                return false;
             }
+            return self.node_mini(o) || self.node_person_count(o) == 0;
         }
         false
     }
@@ -163,11 +163,11 @@ impl Animator {
             .unwrap_or_default();
         let mut w = 0.0f32;
         for nid in list {
-            if let Some(f) = first {
-                if self.node_persons(nid).contains(&f) {
-                    w += self.node_left_width(nid, branch);
-                    break;
-                }
+            if let Some(f) = first
+                && self.node_persons(nid).contains(&f)
+            {
+                w += self.node_left_width(nid, branch);
+                break;
             }
             w += self.node_width(nid) + HORIZONTAL_SPACE;
         }
@@ -181,20 +181,20 @@ impl Animator {
             .map(|g| (g.list.clone(), g.first, g.last, g.branch))
             .unwrap_or_default();
         let mut w = 0.0f32;
-        if let (Some(f), Some(l)) = (first, last) {
-            if f != l {
-                let start = self.person_family_node(f);
-                let end = self.person_family_node(l);
-                if let (Some(s), Some(e)) = (start, end) {
-                    let a = list.iter().position(|n| *n == s).unwrap_or(0);
-                    let b = list.iter().position(|n| *n == e).unwrap_or(a);
-                    if a < b {
-                        for n in &list[a..b] {
-                            w += self.node_width(*n) + HORIZONTAL_SPACE;
-                        }
+        if let (Some(f), Some(l)) = (first, last)
+            && f != l
+        {
+            let start = self.person_family_node(f);
+            let end = self.person_family_node(l);
+            if let (Some(s), Some(e)) = (start, end) {
+                let a = list.iter().position(|n| *n == s).unwrap_or(0);
+                let b = list.iter().position(|n| *n == e).unwrap_or(a);
+                if a < b {
+                    for n in &list[a..b] {
+                        w += self.node_width(*n) + HORIZONTAL_SPACE;
                     }
-                    w = w - self.node_left_width(s, branch) + self.node_left_width(e, branch);
                 }
+                w = w - self.node_left_width(s, branch) + self.node_left_width(e, branch);
             }
         }
         w

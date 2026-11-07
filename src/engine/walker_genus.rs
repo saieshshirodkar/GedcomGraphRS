@@ -113,10 +113,10 @@ impl Graph {
         group: Option<u32>,
     ) -> Genus {
         let mut genus = Genus::empty();
-        if let Some(g) = group {
-            if self.group_contains_person(g, person) {
-                return genus;
-            }
+        if let Some(g) = group
+            && self.group_contains_person(g, person)
+        {
+            return genus;
         }
         let families = self
             .gedcom

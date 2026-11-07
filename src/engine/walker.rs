@@ -34,10 +34,8 @@ impl Graph {
             let mut first_parent_group: Option<u32> = Option::None;
             if parent_size > 0 && self.ancestor_generations > 0 {
                 self.set_node_ancestor(NodeId::Family(parent_node), true);
-                if parent_siblings {
-                    if let Some(s) = second {
-                        self.set_person_origin(s, Some(NodeId::Family(parent_node)));
-                    }
+                if parent_siblings && let Some(s) = second {
+                    self.set_person_origin(s, Some(NodeId::Family(parent_node)));
                 }
                 let g = self.create_group(-1, parent_mini, Branch::None, false);
                 let branch = if parent_size > 1 && !parent_siblings {

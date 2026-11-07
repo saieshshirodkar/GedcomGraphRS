@@ -139,18 +139,18 @@ impl Animator {
     pub fn bond_views(&self) -> Vec<BondView> {
         let mut out: Vec<BondView> = Vec::new();
         for o in &self.bond_owners {
-            if let Some(f) = self.families.get(*o as usize) {
-                if let Some(b) = &f.bond {
-                    out.push(BondView {
-                        owner: *o,
-                        x: b.x,
-                        y: b.y,
-                        w: b.w,
-                        h: b.h,
-                        overlap: b.overlap,
-                        marriage_date: b.marriage_date.clone(),
-                    });
-                }
+            if let Some(f) = self.families.get(*o as usize)
+                && let Some(b) = &f.bond
+            {
+                out.push(BondView {
+                    owner: *o,
+                    x: b.x,
+                    y: b.y,
+                    w: b.w,
+                    h: b.h,
+                    overlap: b.overlap,
+                    marriage_date: b.marriage_date.clone(),
+                });
             }
         }
         out

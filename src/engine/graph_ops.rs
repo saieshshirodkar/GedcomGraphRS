@@ -62,10 +62,8 @@ impl Graph {
                     (Option::None, _) => true,
                     (Some(a), Some(b)) => a == b,
                 };
-                if same_family {
-                    if let Some(p) = self.anim.persons.get_mut(pid as usize) {
-                        p.duplicate = true;
-                    }
+                if same_family && let Some(p) = self.anim.persons.get_mut(pid as usize) {
+                    p.duplicate = true;
                 }
                 if self.with_duplicate_lines {
                     let line = DupLine::of(&self.gedcom, q, pid, &self.anim.persons);

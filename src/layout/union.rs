@@ -36,34 +36,34 @@ impl Union {
 
 impl Animator {
     pub(crate) fn union_origins(&self, uid: u32) -> Vec<NodeId> {
-        if let Some(u) = self.unions.get(uid as usize) {
-            if let Some(a) = u.ancestor {
-                return match a {
-                    NodeId::Person(i) => self
-                        .persons
-                        .get(i as usize)
-                        .and_then(|p| p.origin)
-                        .map(|o| vec![o])
-                        .unwrap_or_default(),
-                    NodeId::Family(_) => self.family_origins(a),
-                };
-            }
+        if let Some(u) = self.unions.get(uid as usize)
+            && let Some(a) = u.ancestor
+        {
+            return match a {
+                NodeId::Person(i) => self
+                    .persons
+                    .get(i as usize)
+                    .and_then(|p| p.origin)
+                    .map(|o| vec![o])
+                    .unwrap_or_default(),
+                NodeId::Family(_) => self.family_origins(a),
+            };
         }
         Vec::new()
     }
 
     pub(crate) fn family_origins(&self, nid: NodeId) -> Vec<NodeId> {
         let mut out: Vec<NodeId> = Vec::new();
-        if let NodeId::Family(i) = nid {
-            if let Some(f) = self.families.get(i as usize) {
-                for p in f.partners.clone() {
-                    if let Some(q) = self.persons.get(p as usize) {
-                        if let Some(o) = q.origin {
-                            if !self.node_mini(o) && self.node_person_count(o) > 0 {
-                                out.push(o);
-                            }
-                        }
-                    }
+        if let NodeId::Family(i) = nid
+            && let Some(f) = self.families.get(i as usize)
+        {
+            for p in f.partners.clone() {
+                if let Some(q) = self.persons.get(p as usize)
+                    && let Some(o) = q.origin
+                    && !self.node_mini(o)
+                    && self.node_person_count(o) > 0
+                {
+                    out.push(o);
                 }
             }
         }
@@ -123,10 +123,10 @@ impl Animator {
     }
 
     pub(crate) fn union_center_rel_x(&self, uid: u32) -> f32 {
-        if let Some(u) = self.unions.get(uid as usize) {
-            if let Some(a) = u.ancestor {
-                return self.node_center_x(a) - u.x;
-            }
+        if let Some(u) = self.unions.get(uid as usize)
+            && let Some(a) = u.ancestor
+        {
+            return self.node_center_x(a) - u.x;
         }
         0.0
     }

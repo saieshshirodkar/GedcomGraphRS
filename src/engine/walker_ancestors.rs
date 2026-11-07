@@ -16,22 +16,20 @@ impl Graph {
             .persons
             .get(common as usize)
             .and_then(|p| p.family);
-        if sibling_partner {
-            if let Some(f) = family {
-                let partners = self
-                    .anim
-                    .families
-                    .get(f as usize)
-                    .map(|x| x.partners.clone())
-                    .unwrap_or_default();
-                if partners.get(1).copied() == Some(common) {
-                    let first_origin = partners
-                        .first()
-                        .and_then(|q| self.anim.persons.get(*q as usize))
-                        .and_then(|q| q.origin);
-                    self.set_person_origin(common, first_origin);
-                    return;
-                }
+        if sibling_partner && let Some(f) = family {
+            let partners = self
+                .anim
+                .families
+                .get(f as usize)
+                .map(|x| x.partners.clone())
+                .unwrap_or_default();
+            if partners.get(1).copied() == Some(common) {
+                let first_origin = partners
+                    .first()
+                    .and_then(|q| self.anim.persons.get(*q as usize))
+                    .and_then(|q| q.origin);
+                self.set_person_origin(common, first_origin);
+                return;
             }
         }
         if self

@@ -126,10 +126,10 @@ impl Graph {
     }
 
     pub(crate) fn family_add_partner(&mut self, fid: u32, pid: u32) {
-        if let Some(f) = self.anim.families.get_mut(fid as usize) {
-            if !f.partners.contains(&pid) {
-                f.partners.push(pid);
-            }
+        if let Some(f) = self.anim.families.get_mut(fid as usize)
+            && !f.partners.contains(&pid)
+        {
+            f.partners.push(pid);
         }
         if let Some(p) = self.anim.persons.get_mut(pid as usize) {
             p.family = Some(fid);
