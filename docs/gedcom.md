@@ -31,3 +31,7 @@ Spouse lookup takes the first husband, then the first wife, then any extra partn
 ## Dates on cards
 
 A birth date renders with a `★` prefix, a christening with `≈`, a death with `✛`. Birth and death share one line when both are short (7 characters or fewer each, counted in characters, not bytes). Longer dates stack on two lines.
+
+## Privacy
+
+`RESN` with value `confidential` or `privacy` marks a person or family restricted. Restricted people render as `[Restricted]` with no titles or dates, and restricted families hide their marriage date on the bond.
